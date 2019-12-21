@@ -111,6 +111,25 @@ func main() {
 			},
 			Action: actionProxy,
 		},
+		{
+			Name:  "server",
+			Usage: "Starts the launchpad server instance",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "port",
+					Usage:  "The port the server will bind to",
+					EnvVar: "PORT",
+					Value:  "4050",
+				},
+				cli.StringFlag{
+					Name:   "log-level",
+					EnvVar: "LOG_LEVEL",
+					Usage:  "Set the log level [debug | info | error]",
+					Value:  loglevelInfo,
+				},
+			},
+			Action: actionServer,
+		},
 	}
 
 	// Start the app

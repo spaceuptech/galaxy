@@ -11,6 +11,7 @@ import (
 	"github.com/spaceuptech/launchpad/proxy"
 	"github.com/spaceuptech/launchpad/runner"
 	"github.com/spaceuptech/launchpad/runner/driver"
+	"github.com/spaceuptech/launchpad/server"
 	"github.com/spaceuptech/launchpad/utils/auth"
 )
 
@@ -74,6 +75,18 @@ func actionProxy(c *cli.Context) error {
 	// Start the proxy
 	p := proxy.New(addr, token)
 	return p.Start()
+}
+
+func actionServer(c *cli.Context) error {
+	// Get server config flags
+	port := c.String("port")
+	loglevel := c.String("log-level")
+
+	// Set the log level
+	setLogLevel(loglevel)
+
+	s := server.New(&server.Config{Port: port})
+	return s.Start()
 }
 
 func setLogLevel(loglevel string) {

@@ -35,18 +35,6 @@ type Runner struct {
 	chAppend chan *model.ProxyMessage
 }
 
-// Config is the object required to configure the runner
-type Config struct {
-	Port      string
-	ProxyPort string
-
-	// Configuration for the driver
-	Driver *driver.Config
-
-	// Configuration for the auth module
-	Auth *auth.Config
-}
-
 // New creates a new instance of the runner
 func New(c *Config) (*Runner, error) {
 	// Add the proxy port to the driver config
