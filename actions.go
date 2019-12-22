@@ -86,6 +86,7 @@ func actionServer(c *cli.Context) error {
 	setLogLevel(loglevel)
 
 	s := server.New(&server.Config{Port: port})
+	s.InitRoutes()
 	return s.Start()
 }
 
