@@ -10,6 +10,6 @@ func HandleLogin() http.HandlerFunc {
 		defer r.Body.Close()
 
 		w.WriteHeader(http.StatusUpgradeRequired)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		json.NewEncoder(w).Encode(map[string]interface{}{"error": "upgrade is required for login"})
 	}
 }
