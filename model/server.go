@@ -29,3 +29,8 @@ type MutationQueryResponse struct {
 		} `json:"insert,omitempty"`
 	} `json:"data"`
 }
+
+type CliLoginRequest struct {
+	Username string `json:"username"`
+	Pass string `json:"pass"`
+}

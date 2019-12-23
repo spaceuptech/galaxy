@@ -18,11 +18,11 @@ type Server struct {
 }
 
 // New creates a new launchpad server instance
-func New(config *Config) *Server {
+func New(config *Config, auth *auth.Module) *Server {
 	return &Server{
 		router: mux.NewRouter(),
 		config: config,
-		// TODO INITIALIZE AUTH
+		auth:   auth,
 	}
 }
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -81,11 +82,29 @@ func actionServer(c *cli.Context) error {
 	// Get server config flags
 	port := c.String("port")
 	loglevel := c.String("log-level")
+	authUsername := c.String("auth-username")
+	authPass := c.String("auth-pass")
+	jwtPublicKeyPath := c.String("jwt-public-key-path")
+	jwtPrivatePath := c.String("jwt-private-key-path")
+
+	if authUsername == "" || authPass == "" {
+		fmt.Errorf("username & pass not provided")
+	}
 
 	// Set the log level
 	setLogLevel(loglevel)
+	a, err := auth.New(&auth.Config{
+		JWTAlgorithm: auth.RSA256,
+		Mode:         auth.Server,
+		UserName:     authUsername,
+		Pass:         authPass,
+	}, jwtPublicKeyPath,jwtPrivatePath)
 
-	s := server.New(&server.Config{Port: port})
+	if err != nil {
+		fmt.Errorf("error creating an instance of auth module")
+	}
+
+	s := server.New(&server.Config{Port: port}, a)
 	s.InitRoutes()
 	return s.Start()
 }

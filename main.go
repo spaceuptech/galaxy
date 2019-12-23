@@ -127,6 +127,26 @@ func main() {
 					Usage:  "Set the log level [debug | info | error]",
 					Value:  loglevelInfo,
 				},
+				cli.StringFlag{
+					Name:   "auth-username",
+					EnvVar: "AUTH_USERNAME",
+					Usage:  "set the username for authentication with space galaxy server",
+				},
+				cli.StringFlag{
+					Name:   "auth-key",
+					EnvVar: "AUTH_KEY",
+					Usage:  "set the key for authentication with space galaxy server",
+				},
+				cli.StringFlag{
+					Name:   "jwt-public-key-path",
+					EnvVar: "JWT_PUBLIC_KEY_PATH",
+					Usage:  "path for public key used for jwt token generation & verification",
+				},
+				cli.StringFlag{
+					Name:   "jwt-private-key-path",
+					EnvVar: "JWT_PRIVATE_KEY_PATH",
+					Usage:  "path for private key used for jwt token generation & verification",
+				},
 			},
 			Action: actionServer,
 		},

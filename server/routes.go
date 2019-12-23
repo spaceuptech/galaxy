@@ -19,7 +19,6 @@ func (s *Server) routes(router *mux.Router) {
 	router.Methods("POST").Path("/v1/galaxy/register-cluster").HandlerFunc(handlers.HandleClusterRegistration(s.auth))
 
 	// route for login
-	router.Methods("POST").Path("/v1/galaxy/login").HandlerFunc(handlers.HandleLogin())
-
+	router.Methods("POST").Path("/v1/galaxy/login").HandlerFunc(handlers.HandleCliLogin(s.auth))
 
 }

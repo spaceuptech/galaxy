@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -55,4 +56,25 @@ func (m *Module) VerifyToken(token string) (map[string]interface{}, error) {
 	}
 
 	return nil, errors.New("token could not be verified")
+}
+
+func (m *Module) VerifyCliLogin(userName, pass string) bool {
+	if userName == m.config.UserName && pass == m.config.Pass {
+		return true
+	}
+	return false
+}
+
+func (m *Module) GenerateLoginToken() (string, error) {
+	token := jwt.New(jwt.SigningMethodRS256)
+	claims := make(jwt.MapClaims)
+	claims["account"] = m.config.UserName
+	claims["role"] = "admin"
+	token.Claims = claims
+
+	tokenString, err := token.SignedString(m.config.PrivateKey)
+	if err != nil {
+		return "", fmt.Errorf("error generating token for login")
+	}
+	return tokenString, nil
 }
