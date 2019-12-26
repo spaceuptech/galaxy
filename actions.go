@@ -11,6 +11,7 @@ import (
 	"github.com/spaceuptech/launchpad/proxy"
 	"github.com/spaceuptech/launchpad/runner"
 	"github.com/spaceuptech/launchpad/runner/driver"
+	"github.com/spaceuptech/launchpad/runner/services"
 	"github.com/spaceuptech/launchpad/utils/auth"
 )
 
@@ -47,6 +48,11 @@ func actionRunner(c *cli.Context) error {
 			DriverType:     driver.Type(driverType),
 			ConfigFilePath: driverConfig,
 			IsInCluster:    !outsideCluster,
+		},
+		Providers: &services.Config{
+			DOToken:   c.String("do-token"),
+			Region:    c.String("region"),
+			Providers: c.StringSlice("providers"),
 		},
 	})
 	if err != nil {

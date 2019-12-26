@@ -13,6 +13,7 @@ import (
 
 	"github.com/spaceuptech/launchpad/model"
 	"github.com/spaceuptech/launchpad/runner/driver"
+	"github.com/spaceuptech/launchpad/runner/services"
 	"github.com/spaceuptech/launchpad/utils"
 	"github.com/spaceuptech/launchpad/utils/auth"
 )
@@ -33,6 +34,9 @@ type Runner struct {
 	// For autoscaler
 	db       *badger.DB
 	chAppend chan *model.ProxyMessage
+
+	// For managedServices
+	services *model.ManagedService
 }
 
 // Config is the object required to configure the runner
@@ -45,6 +49,9 @@ type Config struct {
 
 	// Configuration for the auth module
 	Auth *auth.Config
+
+	// Configuration for DO provider
+	Providers *services.Config
 }
 
 // New creates a new instance of the runner
