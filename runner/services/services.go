@@ -1,11 +1,13 @@
 package services
 
 import (
+	"context"
 	"fmt"
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/runner/services/do"
 	"strings"
 	"sync"
+
+	"github.com/spaceuptech/launchpad/model"
+	"github.com/spaceuptech/launchpad/runner/services/do"
 )
 
 // ManagedServices contains the map of Provider interface
@@ -16,20 +18,19 @@ type ManagedServices struct {
 
 // New checks the provider
 func New(config *Config) (*ManagedServices, error) {
-	providers := map[string]Provider{}
 
+	providers := map[string]Provider{}
 	for _, provider := range config.Providers {
 		array := strings.Split(provider, ":")
 		isTechProvided := len(array) == 2
 
 		switch TypeProvider(array[0]) {
 		case ProviderDO:
-			p, _ := do.New(config.DOToken, config.Region)
+			p := do.New(config.DOToken, config.Region)
 			if isTechProvided {
 				providers[array[1]] = p
 				continue
 			}
-
 			for _, tech := range do.GetAllTech() {
 				providers[tech] = p
 			}
@@ -41,9 +42,9 @@ func New(config *Config) (*ManagedServices, error) {
 	return &ManagedServices{providers: providers}, nil
 }
 
-// Provider describes the inerface a provider mush implement
+// Provider describes the inerface a provider must implement
 type Provider interface {
-	Apply(service *model.ManagedService) error
-	Delete(id string) error
-	GetServices() (*model.GetServiceDetails, error)
+	Apply(ctx context.Context, service *model.ManagedService) error
+	Delete(ctx context.Context, service *model.ManagedService) error
+	GetServices(ctx context.Context, service *model.ManagedService) (*model.GetServiceDetails, error)
 }

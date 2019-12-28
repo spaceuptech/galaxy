@@ -1,62 +1,24 @@
 package do
 
+import "github.com/digitalocean/godo"
+
+// DOdatabases struct as defined in the response from digitalocean
+type DOdatabases struct {
+	Databases []godo.Database `json:"databases"`
+}
+
 // DOdatabase struct as defined in the response from digitalocean
 type DOdatabase struct {
-	Databases []DBresponse `json:"databases"`
+	Database godo.Database `json:"database"`
 }
 
-// DBresponse struct defines the responde rxd from the do
-type DBresponse struct {
-	ID                string
-	Name              string
-	Engine            string
-	Version           string
-	Connection        Connection
-	PrivateConnection PrivateConnection
-	Users             []Users
-	DbNames           []string
-	NumNodes          int64
-	Region            string
-	Status            string
-	Size              string
-	CreatedAt         string
-	MaintenanceWindow MaintenanceWindow
-	Tags              []string
-}
-
-// Connection contains the info needed to access the db cluster
-type Connection struct {
-	URI      string
-	Database string
-	Host     string
-	Port     int
-	User     string
-	Password string
-	Ssl      bool
-}
-
-// PrivateConnection contains the info needed to access the db cluster
-type PrivateConnection struct {
-	URI      string
-	Database string
-	Host     string
-	Port     int
-	User     string
-	Password string
-	Ssl      bool
-}
-
-// Users contains the database users
-type Users struct {
-	Name     string
-	Role     string
-	Password string
-}
-
-// MaintenanceWindow contains information about any pending maintenance for the db cluster
-type MaintenanceWindow struct {
-	Day         string
-	Hour        string
-	Pending     bool
-	Description []string
+// dbSizeSlug is a map which acts as a lookup table for db sizes
+var dbSizeSlug = map[string]struct{}{
+	"db-s-1vcpu-1gb":   struct{}{}, // using empty struct consumes no storage space :P
+	"db-s-1vcpu-2gb":   struct{}{},
+	"db-s-2vcpu-4gb":   struct{}{},
+	"db-s-4vcpu-8gb":   struct{}{},
+	"db-s-6vcpu-16gb":  struct{}{},
+	"db-s-8vcpu-32gb":  struct{}{},
+	"db-s-16vcpu-64gb": struct{}{},
 }

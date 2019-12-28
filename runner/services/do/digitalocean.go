@@ -2,13 +2,14 @@ package do
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/digitalocean/godo"
-	"github.com/spaceuptech/launchpad/model"
 	"golang.org/x/oauth2"
-	"net/http"
+
+	"github.com/spaceuptech/launchpad/model"
 )
 
 // DigitalOcean is used to manage DO clients
@@ -16,7 +17,6 @@ type DigitalOcean struct {
 	client *godo.Client
 	token  string
 	region string
-	ctx    context.Context
 }
 
 // TokenSource -> pat
@@ -32,142 +32,130 @@ func (t *TokenSource) Token() (*oauth2.Token, error) {
 	return token, nil
 }
 
-// New returns DO object
-func New(token string, region string) (*DigitalOcean, error) {
-	// TODO: Create a godo DO client
+// New creates a digitalOcean client and returns DO object
+func New(token string, region string) *DigitalOcean {
 	tokenSource := &TokenSource{
 		AccessToken: token,
 	}
 	oauthClient := oauth2.NewClient(context.Background(), tokenSource)
 	client := godo.NewClient(oauthClient)
-	ctx := context.TODO()
-	if client == nil {
-		return nil, errors.New("Error in creating client")
-	}
-	return &DigitalOcean{client: client, token: token, region: region, ctx: ctx}, nil
+
+	return &DigitalOcean{client: client, token: token, region: region}
 
 }
 
 // Apply is used for create/update operations on DB
-func (do *DigitalOcean) Apply(service *model.ManagedService) error {
-	// ref: https://medium.com/@l.peppoloni/how-to-improve-your-go-code-with-empty-structs-3bd0c66bc531
-	// dbSizeSlug is a map which acts as a lookup table for db sizes
-	type Empty struct{}
-	dbSizeSlug := map[string]struct{}{
-		"db-s-1vcpu-1gb":   Empty{}, // using empty struct consumes no storage space
-		"db-s-1vcpu-2gb":   Empty{},
-		"db-s-2vcpu-4gb":   Empty{},
-		"db-s-4vcpu-8gb":   Empty{},
-		"db-s-6vcpu-16gb":  Empty{},
-		"db-s-8vcpu-32gb":  Empty{},
-		"db-s-16vcpu-64gb": Empty{},
-	}
-	// ref: https://github.com/digitalocean/databases/tree/master/examples
+func (do *DigitalOcean) Apply(ctx context.Context, service *model.ManagedService) error {
 
-	// Check if the request is valid
-	if service.ServiceType == "database" && service.DataBase.Replication.ReplicationFactor == service.DataBase.Replication.Instances {
-		sizeSlug := "db-s-" + string(service.DBResources.CPU) + "vcpu-" + string(service.DBResources.Memory) + "gb"
-		if _, ok := dbSizeSlug[sizeSlug]; !ok {
-			return errors.New("Invalid db size")
-		}
-		// list all database
-		reqURL := "/v2/databases?tag_name=" + service.ProjectID //iff not found...create a new dB with tAG as ID/ProjectID
-		res, err := http.Get(reqURL)
-		if err != nil {
-			err = fmt.Errorf("Error fetching list of databases %s", err)
-			return err
-		}
-		res.Header.Add("Content-Type", "application/json")
-		res.Header.Add("Authorization", ("Bearer")+do.token)
-		listDB := new(DOdatabase)
-		_ = json.NewDecoder(res.Body).Decode(listDB)
+	// Check if the request received is a valid request
+	if service.ServiceType == "database" {
+		if service.DataBase.Replication.ReplicationFactor == service.DataBase.Replication.Instances {
 
-		// Check if database already exists!! use token to login! Else create a new DB
-		if len(listDB.Databases) == 0 {
-			// Create a new DB Cluster
-			createRequest := &godo.DatabaseCreateRequest{
-				Name:       service.ID,
-				EngineSlug: service.DataBase.Type,
-				Version:    service.DataBase.DataBaseVersion,
-				Region:     do.region,
-				SizeSlug:   sizeSlug,
-				NumNodes:   service.DataBase.Replication.ReplicationFactor, //Value inclusinve of stand-by nodes
-				Tags: []string{
-					service.ID,
-					service.ProjectID,
-				},
+			if service.DataBase.Type != "pg" && service.DataBase.Type != "mysql" && service.DataBase.Type != "redis" {
+				return errors.New("invalid Database type provided")
 			}
-			doClient, _, err := do.client.Databases.Create(do.ctx, createRequest)
-			// fmt.Println(cluster, err)
+
+			sizeSlug := "db-s-" + strconv.FormatInt(service.DBResources.CPU, 10) + "vcpu-" + strconv.FormatInt(service.DBResources.Memory, 10) + "gb"
+			if _, ok := dbSizeSlug[sizeSlug]; !ok {
+				return errors.New("Invalid db size")
+			}
+			// list all database
+			listDB, err := do.listDBsByTag(ctx, getTagName(service.ProjectID, service.ID))
 			if err != nil {
-				err = fmt.Errorf("Error creating db cluster: %s", err)
 				return err
 			}
-			// Let's create a new user named 'galaxy' .......#password is auto-generated
-			addUserRequest := &godo.DatabaseCreateUserRequest{
-				Name: "galaxy",
-			}
-			_, _, err = do.client.Databases.CreateUser(do.ctx, doClient.ID, addUserRequest)
+			// Check if database already exists: if it does -> update ; else -> create
+			if len(listDB.Databases) == 0 {
+				// Create a new DB Cluster
+				createRequest := &godo.DatabaseCreateRequest{
+					Name:       service.ID,
+					EngineSlug: service.DataBase.Type,
+					Version:    service.DataBase.DataBaseVersion,
+					Region:     do.region,
+					SizeSlug:   sizeSlug,
+					NumNodes:   service.DataBase.Replication.ReplicationFactor, //Value inclusinve of stand-by nodes
+					Tags: []string{
+						service.ID,
+						service.ProjectID,
+					},
+				}
+				doDB, _, err := do.client.Databases.Create(ctx, createRequest)
 
+				if err != nil {
+					return fmt.Errorf("Error creating db cluster: %s", err)
+				}
+
+				// Create a new Database-User named 'galaxy' (#password is auto-generated)
+				addUserRequest := &godo.DatabaseCreateUserRequest{
+					Name: "galaxy",
+				}
+				_, _, err = do.client.Databases.CreateUser(ctx, doDB.ID, addUserRequest)
+
+				if err != nil {
+					return fmt.Errorf("Error creating db user: %s", err)
+				}
+				return nil
+			}
+
+			// Get the database ID
+			dbID := listDB.Databases[0].ID
+			resizeRequest := &godo.DatabaseResizeRequest{
+				SizeSlug: sizeSlug,
+				NumNodes: service.DataBase.Replication.ReplicationFactor,
+			}
+			_, err = do.client.Databases.Resize(ctx, dbID, resizeRequest)
 			if err != nil {
-				err = fmt.Errorf("Error creating db user: %s", err)
-				return err
+				return fmt.Errorf("Error resizing db cluster: %s", err)
 			}
 			return nil
 		}
-		// TODO: Update an existing database i.e. resize it!
-		// Since we already listed the databases..get the id of the db using tag!
-		dbID := listDB.Databases[0].ID
-		resizeRequest := &godo.DatabaseResizeRequest{
-			SizeSlug: sizeSlug,
-			NumNodes: service.DataBase.Replication.ReplicationFactor,
-		}
-		// DBID -> ID is generated by do...db to store our specified ID and their ID mapping??
-		_, err = do.client.Databases.Resize(do.ctx, dbID, resizeRequest)
-		if err != nil {
-			err = fmt.Errorf("Error resizing db cluster: %s", err)
-			return err
-		}
-		return nil
+		return errors.New("Replication Factor MUST be equal to Instances")
 	}
-	return errors.New("Invalid request received")
+	return errors.New("Invalid Service Type received")
 }
 
 // Delete is used to delete the database cluster
-func (do *DigitalOcean) Delete(id string) error {
-	// TODO: delete a cluster!!
-	_, err := do.client.Databases.Delete(do.ctx, id)
+func (do *DigitalOcean) Delete(ctx context.Context, service *model.ManagedService) error {
+
+	listDB, err := do.listDBsByTag(ctx, getTagName(service.ProjectID, service.ID))
 	if err != nil {
-		err = fmt.Errorf("Error deleting db cluster: %s", err)
 		return err
+	}
+	if len(listDB.Databases) == 0 {
+		return fmt.Errorf("database (%s:%s) not found", service.ProjectID, service.ID)
+	}
+	if _, err := do.client.Databases.Delete(ctx, listDB.Databases[0].ID); err != nil {
+		return fmt.Errorf("Error deleting db cluster: %s", err)
 	}
 	return nil
 }
 
 // GetServices returns the user details for the db
-func (do *DigitalOcean) GetServices() (*model.GetServiceDetails, error) {
-	// Retrieve an existing db cluster..it contains the user as well as the conenction details
-	cluster, _, err := do.client.Databases.Get(do.ctx, "DBID")
+func (do *DigitalOcean) GetServices(ctx context.Context, service *model.ManagedService) (*model.GetServiceDetails, error) {
+
+	// Retrieve an existing db cluster by tag..it contains the user as well as the conenction details
+	cluster, err := do.listDBsByTag(ctx, getTagName(service.ProjectID, service.ID))
 	if err != nil {
-		err = fmt.Errorf("Error fetching db details: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("Error fetching db details: %s", err)
 	}
+	if len(cluster.Databases) == 0 {
+		return nil, fmt.Errorf("database (%s:%s) not found", service.ProjectID, service.ID)
+	}
+
 	var uname string
 	var password string
-	for _, user := range cluster.Users {
+	for _, user := range cluster.Databases[0].Users {
 		if user.Name == "galaxy" {
 			uname = user.Name
 			password = user.Password
 		}
 	}
 	// Connection -> Public && PrivateConnection -> Private
-	port := cluster.Connection.Port
-	pubURI := cluster.Connection.URI
-	prvURI := cluster.PrivateConnection.URI
-	pubHost := cluster.Connection.Host
-	prvHost := cluster.PrivateConnection.Host
-
-	// getservice := new(model.GetServiceDetails)
+	port := cluster.Databases[0].Connection.Port
+	pubURI := cluster.Databases[0].Connection.URI
+	prvURI := cluster.Databases[0].PrivateConnection.URI
+	pubHost := cluster.Databases[0].Connection.Host
+	prvHost := cluster.Databases[0].PrivateConnection.Host
 
 	return &model.GetServiceDetails{
 		PublicNw: model.PublicNw{
