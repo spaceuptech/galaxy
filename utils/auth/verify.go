@@ -21,17 +21,8 @@ func (m *Module) VerifyToken(token string) (map[string]interface{}, error) {
 		var alg string
 		var key interface{}
 
-		// See which algorithm has been configured
-		switch m.config.JWTAlgorithm {
-		case RSA256:
-			alg = jwt.SigningMethodRS256.Alg()
-			key = m.config.PublicKey
-		case HS256:
-			alg = jwt.SigningMethodHS256.Alg()
-			key = []byte(m.config.Secret)
-		default:
-			return nil, errors.New("invalid signing methods configured")
-		}
+		alg = jwt.SigningMethodRS256.Alg()
+		key = m.config.PublicKey
 
 		// Don't forget to validate the alg is what you expect:
 		if token.Method.Alg() != alg {
@@ -59,7 +50,7 @@ func (m *Module) VerifyToken(token string) (map[string]interface{}, error) {
 }
 
 func (m *Module) VerifyCliLogin(userName, pass string) bool {
-	if userName == m.config.UserName && pass == m.config.Pass {
+	if userName == m.config.UserName && pass == m.config.Key {
 		return true
 	}
 	return false
@@ -74,7 +65,7 @@ func (m *Module) GenerateLoginToken() (string, error) {
 
 	tokenString, err := token.SignedString(m.config.PrivateKey)
 	if err != nil {
-		return "", fmt.Errorf("error generating token for login")
+		return "", fmt.Errorf("error generating token for login - %v", err)
 	}
 	return tokenString, nil
 }

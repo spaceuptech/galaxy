@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -23,7 +24,7 @@ func actionRunner(c *cli.Context) error {
 	loglevel := c.String("log-level")
 
 	// Get jwt config
-	jwtAlgo := auth.JWTAlgorithm(c.String("jwt-algo"))
+	// jwtAlgo := auth.JWTAlgorithm(c.String("jwt-algo"))
 	jwtSecret := c.String("jwt-secret")
 	jwtProxySecret := c.String("jwt-proxy-secret")
 
@@ -40,10 +41,9 @@ func actionRunner(c *cli.Context) error {
 		Port:      port,
 		ProxyPort: proxyPort,
 		Auth: &auth.Config{
-			Mode:         auth.Runner,
-			JWTAlgorithm: jwtAlgo,
-			Secret:       jwtSecret,
-			ProxySecret:  jwtProxySecret,
+			Mode:        auth.Runner,
+			Secret:      jwtSecret,
+			ProxySecret: jwtProxySecret,
 		},
 		Driver: &driver.Config{
 			DriverType:     driver.Type(driverType),
@@ -83,22 +83,33 @@ func actionServer(c *cli.Context) error {
 	port := c.String("port")
 	loglevel := c.String("log-level")
 	authUsername := c.String("auth-username")
-	authPass := c.String("auth-pass")
+	authKey := c.String("auth-key")
 	jwtPublicKeyPath := c.String("jwt-public-key-path")
 	jwtPrivatePath := c.String("jwt-private-key-path")
 
-	if authUsername == "" || authPass == "" {
-		fmt.Errorf("username & pass not provided")
+	if authUsername == "" {
+		log.Fatalf("username not provide")
+	}
+
+	if authKey == "" {
+		log.Fatalf("key not provided")
+	}
+
+	if jwtPublicKeyPath == "" {
+		log.Fatalf("public key path not provided")
+	}
+
+	if jwtPrivatePath == "" {
+		log.Fatalf("private key path not provided")
 	}
 
 	// Set the log level
 	setLogLevel(loglevel)
 	a, err := auth.New(&auth.Config{
-		JWTAlgorithm: auth.RSA256,
-		Mode:         auth.Server,
-		UserName:     authUsername,
-		Pass:         authPass,
-	}, jwtPublicKeyPath,jwtPrivatePath)
+		Mode:     auth.Server,
+		UserName: authUsername,
+		Key:      authKey,
+	}, jwtPublicKeyPath, jwtPrivatePath)
 
 	if err != nil {
 		fmt.Errorf("error creating an instance of auth module")

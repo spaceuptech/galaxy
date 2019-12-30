@@ -32,5 +32,5 @@ type MutationQueryResponse struct {
 
 type CliLoginRequest struct {
 	Username string `json:"username"`
-	Pass string `json:"pass"`
+	Key      string `json:"key"`
 }

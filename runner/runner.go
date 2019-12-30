@@ -45,7 +45,7 @@ func New(c *Config) (*Runner, error) {
 	c.Driver.ProxyPort = uint32(proxyPort)
 
 	// Initialise all modules
-	a, err := auth.New(c.Auth)
+	a, err := auth.New(c.Auth, "", "")
 	if err != nil {
 		return nil, err
 	}

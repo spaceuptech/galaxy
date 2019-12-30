@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/spaceuptech/launchpad/model"
@@ -15,9 +16,9 @@ func HandleCliLogin(auth *auth.Module) http.HandlerFunc {
 		v := new(model.CliLoginRequest)
 		json.NewDecoder(r.Body).Decode(v)
 
-		if !auth.VerifyCliLogin(v.Username, v.Pass) {
+		if !auth.VerifyCliLogin(v.Username, v.Key) {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]interface{}{"error": "unknown username or pass"})
+			json.NewEncoder(w).Encode(map[string]interface{}{"error": fmt.Sprintf("unknown username or key")})
 			return
 		}
 
