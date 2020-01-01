@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"log"
+	"net/http"
 	"testing"
 
 	"github.com/spaceuptech/launchpad/model"
@@ -29,7 +30,7 @@ func TestHandleClusterRegistration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			response, err := utils.HttpRequest(tt.httpBody, clusterRegistrationEndpoint, utils.SimpleRequest)
+			response, err := utils.HttpRequest(http.MethodPost, clusterRegistrationEndpoint, nil, tt.httpBody, utils.SimpleRequest)
 			if err != nil {
 				t.Error(err)
 			}

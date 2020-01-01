@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -88,7 +87,7 @@ func actionServer(c *cli.Context) error {
 	jwtPrivatePath := c.String("jwt-private-key-path")
 
 	if authUsername == "" {
-		log.Fatalf("username not provide")
+		log.Fatalf("username not provided")
 	}
 
 	if authKey == "" {
@@ -103,21 +102,23 @@ func actionServer(c *cli.Context) error {
 		log.Fatalf("private key path not provided")
 	}
 
+	// TODO LOAD CONFIG FROM FILE
+
 	// Set the log level
 	setLogLevel(loglevel)
-	a, err := auth.New(&auth.Config{
-		Mode:     auth.Server,
-		UserName: authUsername,
-		Key:      authKey,
-	}, jwtPublicKeyPath, jwtPrivatePath)
 
+	// server instance
+	s := &server.Config{Port: port}
+	// auth instance
+	a := &auth.Config{Mode: auth.Server, UserName: authUsername, Key: authKey}
+
+	server, err := server.New(s, a, jwtPublicKeyPath, jwtPrivatePath)
 	if err != nil {
-		fmt.Errorf("error creating an instance of auth module")
+		return err
 	}
+	server.InitRoutes()
 
-	s := server.New(&server.Config{Port: port}, a)
-	s.InitRoutes()
-	return s.Start()
+	return server.Start()
 }
 
 func setLogLevel(loglevel string) {

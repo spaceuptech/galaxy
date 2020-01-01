@@ -12,8 +12,7 @@ func (m *Module) VerifyToken(token string) (map[string]interface{}, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	return nil, nil
-
+	// return nil, nil
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 

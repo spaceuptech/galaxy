@@ -1,10 +1,20 @@
 package model
 
-type ProjectCreateRequest struct {
-	ProjectID string   `json:"project_id"`
-	Clusters  []string `json:"clusters"`
-	Team      string   `json:"team"`
-	AccountID string   `json:"account_id"`
+type CreateProject struct {
+	ID                 string         `json:"id" yaml:"id"`
+	DefaultEnvironment string         `json:"default_ environment" yaml:"default_ environment"`
+	Environments       []*Environment `json:"environment" yaml:"environment"`
+}
+
+type Environment struct {
+	ID       string     `json:"id" yaml:"id"`
+	Name     string     `json:"name" yaml:"name"`
+	Clusters []*Cluster `json:"clusters" yaml:"clusters"`
+}
+
+type Cluster struct {
+	ID  string `json:"id" yaml:"id"`
+	Url string `json:"url" yaml:"url"`
 }
 
 type RegisterClusterRequest struct {

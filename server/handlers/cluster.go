@@ -7,7 +7,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
+
 	"github.com/spaceuptech/launchpad/model"
+	"github.com/spaceuptech/launchpad/server/config"
 	"github.com/spaceuptech/launchpad/utils"
 	"github.com/spaceuptech/launchpad/utils/auth"
 )
@@ -44,7 +47,7 @@ func HandleClusterRegistration(auth *auth.Module) http.HandlerFunc {
 				case <-done:
 					return
 				case <-ticker.C:
-					_, err := utils.HttpRequest("", request.Url, utils.Ping)
+					_, err := utils.HttpRequest(http.MethodPost, request.Url, map[string]string{}, nil, utils.Ping)
 					if err != nil {
 						if clusterAliveCount == utils.MaximumPingRetries {
 							// TODO UPDATE THE CLUSTER STATUS TO DEAD IN DATABASE
@@ -77,4 +80,56 @@ func updateCluster(ctx context.Context, request *model.RegisterClusterRequest, s
 			"url":         request.Url,
 		},
 	}, utils.GraphqlMutation)
+}
+
+func HandleAddProjectCluster(auth *auth.Module, galaxyConfig *config.Module) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		req := new(model.Cluster)
+		json.NewDecoder(r.Body).Decode(req)
+
+		// token verification
+		if _, err := auth.VerifyToken(utils.GetTokenFromHeader(r)); err != nil {
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+		}
+
+		vars := mux.Vars(r)
+		projectID := vars["projectID"]
+		EnvironmentID := vars["environmentID"]
+
+		if err := galaxyConfig.AddCluster(ctx, projectID, EnvironmentID, req); err != nil {
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+		}
+
+		utils.SendEmptySuccessResponse(w, r)
+	}
+}
+
+func HandleDeleteProjectCluster(auth *auth.Module, galaxyConfig *config.Module) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		// token verification
+		if _, err := auth.VerifyToken(utils.GetTokenFromHeader(r)); err != nil {
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+		}
+
+		vars := mux.Vars(r)
+		projectID := vars["projectID"]
+		EnvironmentID := vars["environmentID"]
+		clusterID := vars["clusterID"]
+
+		if err := galaxyConfig.DeleteCluster(ctx, projectID, EnvironmentID, clusterID); err != nil {
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+		}
+
+		utils.SendEmptySuccessResponse(w, r)
+	}
 }

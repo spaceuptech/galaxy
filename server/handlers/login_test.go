@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/spaceuptech/launchpad/utils"
@@ -22,18 +23,29 @@ func TestHandleLogin(t *testing.T) {
 			},
 			isErrExpected: false,
 		},
+		{
+			name: "Invalid credentials",
+			httpBody: map[string]interface{}{
+				"username": "nil",
+				"key":      "nil",
+			},
+			isErrExpected: true,
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			resp, gotErr := utils.HttpRequest(testCase.httpBody, loginEndpoint, utils.SimpleRequest)
+			resp, gotErr := utils.HttpRequest(http.MethodPost, loginEndpoint, nil, testCase.httpBody, utils.SimpleRequest)
 			if (gotErr != nil) != testCase.isErrExpected {
 				t.Errorf("Error login got, %v wanted, %v", gotErr, testCase.isErrExpected)
 			}
-			token, ok := resp.(string)
-			if !ok {
-				t.Logf("Generated Token - %s", token)
+
+			if !testCase.isErrExpected {
+				if _, ok := resp["token"]; !ok {
+					t.Logf("token not found")
+				}
 			}
+
 		})
 	}
 }

@@ -12,6 +12,7 @@ require (
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.4.2
 	github.com/urfave/cli v1.22.2
+	gopkg.in/yaml.v2 v2.2.4
 	istio.io/api v0.0.0-20191109011911-e51134872853
 	istio.io/client-go v0.0.0-20191206191348-5c576a7ecef0
 	k8s.io/api v0.0.0-20191114100352-16d7abae0d2a

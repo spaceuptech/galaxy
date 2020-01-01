@@ -15,6 +15,12 @@ const (
 	MaximumPingRetries
 
 	// Cluster
-	ClusterDead = "dead"
+	ClusterDead  = "dead"
 	ClusterAlive = "alive"
+
+	// Config file
+	ConfigFilePath = "config.yaml"
+
+	// Config Init
+	CommunityEdition = "ce"
 )

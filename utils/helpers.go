@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/spaceuptech/launchpad/model"
 )
@@ -40,15 +41,34 @@ func FireGraphqlQuery(params *model.InsertRequest, responseType int) (interface{
 }
 
 // HttpRequest is a general function for sending http request to the provided url
-func HttpRequest(params interface{}, url string, functionCallType int) (interface{}, error) {
+func HttpRequest(method, url string, headers map[string]string, params interface{}, functionCallType int) (map[string]interface{}, error) {
+	// encode to json
 	requestBody := new(bytes.Buffer)
-	if err := json.NewEncoder(requestBody).Encode(params); err != nil {
-		return nil, fmt.Errorf("error encoding body for http request %v", err)
+	if params != nil {
+		if err := json.NewEncoder(requestBody).Encode(params); err != nil {
+			return nil, fmt.Errorf("error encoding body for http request %v", err)
+		}
 	}
 
-	resp, err := http.Post(url, ApplicationJson, requestBody)
+	client := http.Client{}
+
+	// create http request
+	httpRequest, err := http.NewRequest(method, url, requestBody)
 	if err != nil {
-		return nil, fmt.Errorf("error sending http request for pinging the cluster %v", err)
+		return nil, fmt.Errorf("error creating http request - %v", err)
+	}
+
+	// set http headers
+	if headers != nil {
+		for key, value := range headers {
+			httpRequest.Header.Add(key, value)
+		}
+	}
+
+	// make http request
+	resp, err := client.Do(httpRequest)
+	if err != nil {
+		return nil, fmt.Errorf("error sending http %s request - %v", method, err)
 	}
 	defer resp.Body.Close()
 
@@ -60,14 +80,24 @@ func HttpRequest(params interface{}, url string, functionCallType int) (interfac
 		return nil, nil
 
 	case SimpleRequest:
+		body := map[string]interface{}{}
+		json.NewDecoder(resp.Body).Decode(&body)
 		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("error response from server with status code %v", resp.StatusCode)
+			return nil, fmt.Errorf("error response from server with status code %v, error message - %v", resp.StatusCode, body["error"])
 		}
-		body := new(map[string]interface{})
-		json.NewDecoder(resp.Body).Decode(body)
 		return body, nil
 
 	default:
 		return nil, fmt.Errorf("invalid response type")
 	}
+}
+
+// GetTokenFromHeader returns the token from the request header
+func GetTokenFromHeader(r *http.Request) string {
+	// Get the JWT token from header
+	tokens, ok := r.Header["Authorization"]
+	if !ok {
+		tokens = []string{""}
+	}
+	return strings.TrimPrefix(tokens[0], "Bearer ")
 }
