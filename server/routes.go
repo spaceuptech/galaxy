@@ -32,7 +32,13 @@ func (s *Server) routes(router *mux.Router) {
 	// project environments
 	router.Methods(http.MethodPost).Path("/v1/galaxy/project/{projectID}/{environmentID}").HandlerFunc(handlers.HandleAddEnvironment(s.auth, s.galacyConfig))
 	router.Methods(http.MethodDelete).Path("/v1/galaxy/project/{projectID}/{environmentID}").HandlerFunc(handlers.HandleDeleteEnvironment(s.auth, s.galacyConfig))
-	// route for service configuration
-	router.Methods(http.MethodPost).Path("/v1/galaxy/service/create").HandlerFunc(handlers.HandleApplyService(s.auth, s.galacyConfig))
-	router.Methods(http.MethodDelete).Path("/v1/galaxy/service/create").HandlerFunc(handlers.HandleDeleteService(s.auth, s.galacyConfig))
+	// route for service configuration TODO ACTUAL IMPLEMENTATION REMAINING WITH DATABASE make sure it apply is upsert op
+	router.Methods(http.MethodPost).Path("/v1/galaxy/service/{serviceID}").HandlerFunc(handlers.HandleUpsertService(s.auth, s.galacyConfig))
+	router.Methods(http.MethodDelete).Path("/v1/galaxy/service/{serviceID}").HandlerFunc(handlers.HandleDeleteService(s.auth, s.galacyConfig))
+	// web hook for applying service todo implementation reamaingig
+	router.Methods(http.MethodPost).Path("/v1/galaxy/service/apply").HandlerFunc(handlers.HandleApplyService(s.auth, s.galacyConfig))
+
+	// TODO implementation should be event based ?
+	// route for providing public key to runner / cluster
+	router.Methods(http.MethodGet).Path("/v1/galaxy/runner/key").HandlerFunc(handlers.HandleProvidePublicKey(s.auth))
 }

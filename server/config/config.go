@@ -22,8 +22,12 @@ type Config interface {
 	AddEnvironment(ctx context.Context, projectID string, req *model.Environment) error
 	DeleteEnvironment(ctx context.Context, projectID, environmentId string) error
 
-	AddCluster(ctx context.Context, projectID, environmentID string, req *model.Cluster) error
-	DeleteCluster(ctx context.Context, projectID, environmentID, clusterID string) error
+	AddProjectCluster(ctx context.Context, projectID, environmentID string, req *model.Cluster) error
+	DeleteProjectCluster(ctx context.Context, projectID, environmentID, clusterID string) error
+
+	UpsertService(ctx context.Context, req *model.Service) error
+	DeleteService(ctx context.Context, serviceID string) error
+	ApplyService(ctx context.Context, req *model.Service) error
 }
 
 // New create a new instance of the Module object

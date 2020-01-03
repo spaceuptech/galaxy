@@ -30,10 +30,22 @@ func (m *Module) DeleteEnvironment(ctx context.Context, projectID, environmentId
 	return m.block.DeleteEnvironment(ctx, projectID, environmentId)
 }
 
-func (m *Module) AddCluster(ctx context.Context, projectID, environmentID string, req *model.Cluster) error {
-	return m.block.AddCluster(ctx, projectID, environmentID, req)
+func (m *Module) AddProjectCluster(ctx context.Context, projectID, environmentID string, req *model.Cluster) error {
+	return m.block.AddProjectCluster(ctx, projectID, environmentID, req)
 }
 
-func (m *Module) DeleteCluster(ctx context.Context, projectID, environmentID, clusterID string) error {
-	return m.block.DeleteCluster(ctx, projectID, environmentID, clusterID)
+func (m *Module) DeleteProjectCluster(ctx context.Context, projectID, environmentID, clusterID string) error {
+	return m.block.DeleteProjectCluster(ctx, projectID, environmentID, clusterID)
+}
+
+func (m *Module) UpsertService(ctx context.Context, req *model.Service) error {
+	return m.block.UpsertService(ctx, req)
+}
+
+func (m *Module) DeleteService(ctx context.Context, serviceID string) error {
+	return m.block.DeleteService(ctx, serviceID)
+}
+
+func (m *Module) ApplyService(ctx context.Context, req *model.Service) error {
+	return m.block.ApplyService(ctx, req)
 }

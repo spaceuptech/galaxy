@@ -4,80 +4,106 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/spaceuptech/launchpad/model"
+	"github.com/spaceuptech/launchpad/utils"
 )
 
-// AddEnvironment adds new environment to the specified project
-func (m *Manager) AddEnvironment(ctx context.Context, projectID string, req *model.Environment) error {
-	// get specified project from database
+func (m *Manager) AddProjectCluster(ctx context.Context, projectID, environmentID string, req *model.Cluster) error {
 	projects, err := m.GetProject(ctx, projectID)
 	if err != nil {
-		return fmt.Errorf("error adding environment - %v", err)
+		return fmt.Errorf("error adding cluster - %v", err)
 	}
 
-	// there should only be a single project for specified projectID
 	if len(projects) == 1 {
 		project := projects[0]
 		envs := []*model.Environment{}
-		// unmarshal environment as it is stored as json string in database
 		if err := json.Unmarshal([]byte(project.Environments), envs); err != nil {
-			return fmt.Errorf("error adding environment unable to unmarshal envs - %v", err)
+			return fmt.Errorf("error adding cluster unable to unmarshal envs - %v", err)
 		}
 
-		isEnvFound := false
-		// check if environment already exists
+		isClusterFound, environmentIndex := false, 0
 		for _, environment := range envs {
-			isEnvFound = true
-			if environment.ID == req.ID {
-				fmt.Errorf("error adding environment specified environment already exists")
+			if environment.ID == environmentID {
+				for _, cluster := range environment.Clusters {
+					isClusterFound = true
+					if cluster.ID == req.ID {
+						fmt.Errorf("error adding cluster specified cluster already exists")
+					}
+				}
 			}
 		}
-
-		// if doesn't exits then add new environment & update the database
-		if isEnvFound {
-			envs = append(envs, req)
+		if isClusterFound {
+			envs[environmentIndex].Clusters = append(envs[environmentIndex].Clusters, req)
 			data, err := json.Marshal(envs)
 			if err != nil {
-				return fmt.Errorf("error adding environment unable to marshal envs - %v", err)
+				return fmt.Errorf("error adding cluster unable to marshal envs - %v", err)
 			}
 			project.Environments = string(data)
 			return m.updateProject(project)
 		}
 	}
-	return fmt.Errorf("error adding environment project length not equal to one")
+	return fmt.Errorf("error adding cluster project length not equal to one")
 }
 
-// DeleteEnvironment deletes specified environment from database if it exists
-func (m *Manager) DeleteEnvironment(ctx context.Context, projectID, environmentID string) error {
+func (m *Manager) DeleteProjectCluster(ctx context.Context, projectID, environmentID, clusterID string) error {
 	projects, err := m.GetProject(ctx, projectID)
 	if err != nil {
-		return fmt.Errorf("error deleting environment - %v", err)
+		return fmt.Errorf("error adding cluster - %v", err)
 	}
 
 	if len(projects) == 1 {
 		project := projects[0]
 		envs := []*model.Environment{}
 		if err := json.Unmarshal([]byte(project.Environments), envs); err != nil {
-			return fmt.Errorf("error deleting environment unable to unmarshal envs - %v", err)
+			return fmt.Errorf("error adding cluster unable to unmarshal envs - %v", err)
 		}
 
-		isEnvFound := false
+		isClusterFound := false
+		// environmentIndex := 0 use this variable
 		for _, environment := range envs {
 			if environment.ID == environmentID {
-				isEnvFound = true
-				// TODO REMOVE ENVIRONMENT HERE
-				data, err := json.Marshal(envs)
-				if err != nil {
-					return fmt.Errorf("error deleting environment unable to marshal envs - %v", err)
+				for _, cluster := range environment.Clusters {
+					if cluster.ID == clusterID {
+						isClusterFound = true
+						// TODO REMOVE CLUSTER HERE
+						data, err := json.Marshal(envs)
+						if err != nil {
+							return fmt.Errorf("error deleting cluster unable to marshal envs - %v", err)
+						}
+						project.Environments = string(data)
+						return m.updateProject(project)
+					}
 				}
-				project.Environments = string(data)
-				return m.updateProject(project)
 			}
 		}
-		if !isEnvFound {
-			return fmt.Errorf("error deleting environment specified environment not found")
+		if !isClusterFound {
+			return fmt.Errorf("error deleting cluster specified cluster not found")
 		}
 	}
-	return fmt.Errorf("error deleting environment project length not equal to one")
+	return fmt.Errorf("error adding cluster project length not equal to one")
+}
+
+func (m *Manager) GetCluster(clusterID string) (*model.TableClusters, error) {
+	h := &utils.HttpModel{
+		Method:  http.MethodGet,
+		Url:     getCrudEndpoint(utils.TableClusters, utils.OpRead),
+		Headers: nil,
+		Params: CrudRequestBody{
+			Op:   utils.OpOne,
+			Find: &model.TableClusters{ClusterID: clusterID},
+		},
+		FunctionCallType: utils.SimpleRequest,
+	}
+	resp, err := utils.HttpRequest(h)
+	if err != nil {
+		return nil, fmt.Errorf("error getting cluster - %v", err)
+	}
+	// TODO CONFIRM THIS
+	clusters, ok := resp["result"].([]*model.TableClusters)
+	if !ok {
+		return nil, fmt.Errorf("error getting cluster info - %v", err)
+	}
+	return clusters[0], nil
 }

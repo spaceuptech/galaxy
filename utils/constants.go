@@ -36,6 +36,7 @@ const (
 
 	// SC table names
 	TableProjects = "projects"
+	TableServices = "services"
 	TableClusters = "clusters"
 	TableAccounts = "accounts"
 

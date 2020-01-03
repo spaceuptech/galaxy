@@ -2,18 +2,20 @@ package model
 
 // Service describes a service's configurations
 type Service struct {
-	ID        string            `json:"id" yaml:"id"`
-	Name      string            `json:"name" yaml:"name"`
-	ProjectID string            `json:"projectId" yaml:"projectId"`
-	Version   string            `json:"version" yaml:"version"`
-	Scale     ScaleConfig       `json:"scale" yaml:"scale"`
-	Labels    map[string]string `json:"labels" yaml:"labels"`
-	Tasks     []Task            `json:"tasks" yaml:"tasks"`
-	Affinity  []Affinity        `json:"affinity" yaml:"affinity"`
-	Whitelist []string          `json:"whitelist" yaml:"whitelist"`
-	Upstreams []Upstream        `json:"upstreams" yaml:"upstreams"`
-	Runtime   Runtime           `json:"runtime" yaml:"runtime"`
-	Expose    *Expose           `json:"expose" yaml:"expose"`
+	ID          string            `json:"id" yaml:"id"`
+	Name        string            `json:"name" yaml:"name"`
+	Environment string            `json:"environment" yaml:"environment"`
+	Clusters    []string          `json:"clusters" yaml:"clusters"`
+	ProjectID   string            `json:"projectId" yaml:"projectId"`
+	Version     string            `json:"version" yaml:"version"`
+	Scale       ScaleConfig       `json:"scale" yaml:"scale"`
+	Labels      map[string]string `json:"labels" yaml:"labels"`
+	Tasks       []Task            `json:"tasks" yaml:"tasks"`
+	Affinity    []Affinity        `json:"affinity" yaml:"affinity"`
+	Whitelist   []string          `json:"whitelist" yaml:"whitelist"`
+	Upstreams   []Upstream        `json:"upstreams" yaml:"upstreams"`
+	Runtime     Runtime           `json:"runtime" yaml:"runtime"`
+	Expose      *Expose           `json:"expose" yaml:"expose"`
 }
 
 // ScaleConfig describes the config used to scale a service

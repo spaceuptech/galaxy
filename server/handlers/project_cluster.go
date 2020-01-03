@@ -106,7 +106,7 @@ func HandleAddProjectCluster(auth *auth.Module, galaxyConfig *config.Module) htt
 		projectID := vars["projectID"]
 		EnvironmentID := vars["environmentID"]
 
-		if err := galaxyConfig.AddCluster(ctx, projectID, EnvironmentID, req); err != nil {
+		if err := galaxyConfig.AddProjectCluster(ctx, projectID, EnvironmentID, req); err != nil {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 		}
 
@@ -131,7 +131,7 @@ func HandleDeleteProjectCluster(auth *auth.Module, galaxyConfig *config.Module) 
 		EnvironmentID := vars["environmentID"]
 		clusterID := vars["clusterID"]
 
-		if err := galaxyConfig.DeleteCluster(ctx, projectID, EnvironmentID, clusterID); err != nil {
+		if err := galaxyConfig.DeleteProjectCluster(ctx, projectID, EnvironmentID, clusterID); err != nil {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 		}
 
