@@ -40,12 +40,20 @@ func FireGraphqlQuery(params *model.InsertRequest, responseType int) (interface{
 	}
 }
 
+type HttpModel struct {
+	Method           string
+	Url              string
+	Headers          map[string]string
+	Params           interface{}
+	FunctionCallType int
+}
+
 // HttpRequest is a general function for sending http request to the provided url
-func HttpRequest(method, url string, headers map[string]string, params interface{}, functionCallType int) (map[string]interface{}, error) {
+func HttpRequest(h *HttpModel) (map[string]interface{}, error) {
 	// encode to json
 	requestBody := new(bytes.Buffer)
-	if params != nil {
-		if err := json.NewEncoder(requestBody).Encode(params); err != nil {
+	if h.Params != nil {
+		if err := json.NewEncoder(requestBody).Encode(h.Params); err != nil {
 			return nil, fmt.Errorf("error encoding body for http request %v", err)
 		}
 	}
@@ -53,14 +61,14 @@ func HttpRequest(method, url string, headers map[string]string, params interface
 	client := http.Client{}
 
 	// create http request
-	httpRequest, err := http.NewRequest(method, url, requestBody)
+	httpRequest, err := http.NewRequest(h.Method, h.Url, requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating http request - %v", err)
 	}
 
 	// set http headers
-	if headers != nil {
-		for key, value := range headers {
+	if h.Headers != nil {
+		for key, value := range h.Headers {
 			httpRequest.Header.Add(key, value)
 		}
 	}
@@ -68,11 +76,11 @@ func HttpRequest(method, url string, headers map[string]string, params interface
 	// make http request
 	resp, err := client.Do(httpRequest)
 	if err != nil {
-		return nil, fmt.Errorf("error sending http %s request - %v", method, err)
+		return nil, fmt.Errorf("error sending http %s request - %v", h.Method, err)
 	}
 	defer resp.Body.Close()
 
-	switch functionCallType {
+	switch h.FunctionCallType {
 	case Ping:
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("error pinging cluster")

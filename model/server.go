@@ -1,8 +1,9 @@
 package model
 
+// project configuration
 type CreateProject struct {
 	ID                 string         `json:"id" yaml:"id"`
-	DefaultEnvironment string         `json:"default_ environment" yaml:"default_ environment"`
+	DefaultEnvironment string         `json:"default_environment" yaml:"default_environment"`
 	Environments       []*Environment `json:"environment" yaml:"environment"`
 }
 

@@ -10,11 +10,11 @@ func (m *Module) AddProject(ctx context.Context, req *model.CreateProject) error
 	return m.block.AddProject(ctx, req)
 }
 
-func (m *Module) GetProject(ctx context.Context, projectID string) (*model.CreateProject, error) {
+func (m *Module) GetProject(ctx context.Context, projectID string) ([]*model.TableProjects, error) {
 	return m.block.GetProject(ctx, projectID)
 }
 
-func (m *Module) GetProjects(ctx context.Context) ([]*model.CreateProject, error) {
+func (m *Module) GetProjects(ctx context.Context) ([]*model.TableProjects, error) {
 	return m.block.GetProjects(ctx)
 }
 

@@ -2,74 +2,82 @@ package file
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/spaceuptech/launchpad/model"
 )
 
-func (m *Manager) AddCluster(ctx context.Context, projectID, environmentID string, req *model.Cluster) error {
-	m.RLock()
-	config := m.galaxyConfig
-	m.RUnlock()
+// AddEnvironment adds new environment to the specified project
+func (m *Manager) AddEnvironment(ctx context.Context, projectID string, req *model.Environment) error {
+	// get specified project from database
+	projects, err := m.GetProject(ctx, projectID)
+	if err != nil {
+		return fmt.Errorf("error adding environment - %v", err)
+	}
 
-	isEnvFound := false
-	projectIndex, environmentIndex := 0, 0
+	// there should only be a single project for specified projectID
+	if len(projects) == 1 {
+		project := projects[0]
+		envs := []*model.Environment{}
+		// unmarshal environment as it is stored as json string in database
+		if err := json.Unmarshal([]byte(project.Environments), envs); err != nil {
+			return fmt.Errorf("error adding environment unable to unmarshal envs - %v", err)
+		}
 
-	for p, project := range config.Projects {
-		if project.ID == projectID {
-			projectIndex = p
-			for e, environment := range project.Environments {
-				if environment.ID == environmentID {
-					environmentIndex = e
-					isEnvFound = true
-					for _, cluster := range environment.Clusters {
-						if cluster.ID == req.ID {
-							return fmt.Errorf("error adding cluster, provided cluster already exists in galaxy config")
-						}
-					}
-				}
+		isEnvFound := false
+		// check if environment already exists
+		for _, environment := range envs {
+			isEnvFound = true
+			if environment.ID == req.ID {
+				fmt.Errorf("error adding environment specified environment already exists")
 			}
 		}
-	}
 
-	if isEnvFound {
-		newCluster := new(model.Cluster)
-		config.Projects[projectIndex].Environments[environmentIndex].Clusters = append(config.Projects[projectIndex].Environments[environmentIndex].Clusters, newCluster)
-		return m.StoreConfigToFile(ctx, config)
+		// if doesn't exits then add new environment & update the database
+		if isEnvFound {
+			envs = append(envs, req)
+			data, err := json.Marshal(envs)
+			if err != nil {
+				return fmt.Errorf("error adding environment unable to marshal envs - %v", err)
+			}
+			project.Environments = string(data)
+			return m.updateProject(project)
+		}
 	}
-
-	return fmt.Errorf("error adding environment, specified environment doesn't exists in galaxy config")
+	return fmt.Errorf("error adding environment project length not equal to one")
 }
 
-func (m *Manager) DeleteCluster(ctx context.Context, projectID, environmentID, clusterID string) error {
-	m.RLock()
-	config := m.galaxyConfig
-	m.RUnlock()
+// DeleteEnvironment deletes specified environment from database if it exists
+func (m *Manager) DeleteEnvironment(ctx context.Context, projectID, environmentID string) error {
+	projects, err := m.GetProject(ctx, projectID)
+	if err != nil {
+		return fmt.Errorf("error deleting environment - %v", err)
+	}
 
-	isEnvFound := false
+	if len(projects) == 1 {
+		project := projects[0]
+		envs := []*model.Environment{}
+		if err := json.Unmarshal([]byte(project.Environments), envs); err != nil {
+			return fmt.Errorf("error deleting environment unable to unmarshal envs - %v", err)
+		}
 
-	for _, project := range config.Projects {
-		if project.ID == projectID {
-			for _, environment := range project.Environments {
-				if environment.ID == environmentID {
-					isEnvFound = true
-					for i, cluster := range environment.Clusters {
-						if cluster.ID == clusterID {
-							newClusters, err := remove(environment.Clusters, i)
-							if err != nil {
-								return err
-							}
-							environment.Clusters = newClusters.([]*model.Cluster)
-							return m.StoreConfigToFile(ctx, config)
-						}
-					}
+		isEnvFound := false
+		for _, environment := range envs {
+			if environment.ID == environmentID {
+				isEnvFound = true
+				// TODO REMOVE ENVIRONMENT HERE
+				data, err := json.Marshal(envs)
+				if err != nil {
+					return fmt.Errorf("error deleting environment unable to marshal envs - %v", err)
 				}
+				project.Environments = string(data)
+				return m.updateProject(project)
 			}
 		}
+		if !isEnvFound {
+			return fmt.Errorf("error deleting environment specified environment not found")
+		}
 	}
-
-	if !isEnvFound {
-		return fmt.Errorf("error removing cluster, specified environment doesn't exists in galaxy config")
-	}
-	return nil
+	return fmt.Errorf("error deleting environment project length not equal to one")
 }

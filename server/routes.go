@@ -20,10 +20,7 @@ func (s *Server) routes(router *mux.Router) {
 	// route for login
 	router.Methods(http.MethodPost).Path("/v1/galaxy/login").HandlerFunc(handlers.HandleLogin(s.auth))
 
-	// route for service configuration
-	router.Methods(http.MethodPost).Path("/v1/galaxy/service/create").HandlerFunc(handlers.HandleServiceCreation())
-
-	// routes for project configuration
+	// routes for galaxy configuration
 	// projects
 	router.Methods(http.MethodPost).Path("/v1/galaxy/project/create").HandlerFunc(handlers.HandleAddProject(s.auth, s.galacyConfig))
 	router.Methods(http.MethodGet).Path("/v1/galaxy/project/{projectID}").HandlerFunc(handlers.HandleGetProject(s.auth, s.galacyConfig))
@@ -35,5 +32,7 @@ func (s *Server) routes(router *mux.Router) {
 	// project environments
 	router.Methods(http.MethodPost).Path("/v1/galaxy/project/{projectID}/{environmentID}").HandlerFunc(handlers.HandleAddEnvironment(s.auth, s.galacyConfig))
 	router.Methods(http.MethodDelete).Path("/v1/galaxy/project/{projectID}/{environmentID}").HandlerFunc(handlers.HandleDeleteEnvironment(s.auth, s.galacyConfig))
-
+	// route for service configuration
+	router.Methods(http.MethodPost).Path("/v1/galaxy/service/create").HandlerFunc(handlers.HandleApplyService(s.auth, s.galacyConfig))
+	router.Methods(http.MethodDelete).Path("/v1/galaxy/service/create").HandlerFunc(handlers.HandleDeleteService(s.auth, s.galacyConfig))
 }

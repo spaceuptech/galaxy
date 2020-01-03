@@ -2,21 +2,21 @@ package config
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/spaceuptech/launchpad/model"
 	"github.com/spaceuptech/launchpad/server/config/file"
-	"github.com/spaceuptech/launchpad/utils"
+	"github.com/spaceuptech/launchpad/utils/auth"
 )
 
 type Module struct {
 	block Config
+	auth  *auth.Module
 }
 
 type Config interface {
 	AddProject(ctx context.Context, req *model.CreateProject) error
-	GetProject(ctx context.Context, projectID string) (*model.CreateProject, error)
-	GetProjects(ctx context.Context) ([]*model.CreateProject, error)
+	GetProject(ctx context.Context, projectID string) ([]*model.TableProjects, error)
+	GetProjects(ctx context.Context) ([]*model.TableProjects, error)
 	DeleteProject(ctx context.Context, projectID string) error
 
 	AddEnvironment(ctx context.Context, projectID string, req *model.Environment) error
@@ -27,19 +27,10 @@ type Config interface {
 }
 
 // New create a new instance of the Module object
-func New(mode string) (*Module, error) {
-	v, err := initBlock(mode)
+func New(auth *auth.Module) (*Module, error) {
+	v, err := file.Init()
 	if err != nil {
 		return nil, err
 	}
-	return &Module{block: v}, nil
-}
-
-func initBlock(mode string) (Config, error) {
-	switch mode {
-	case utils.CommunityEdition:
-		return file.Init(), nil
-	default:
-		return nil, fmt.Errorf("error config invalid mode")
-	}
+	return &Module{block: v, auth: auth}, nil
 }

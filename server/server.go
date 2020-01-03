@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/launchpad/server/config"
-	"github.com/spaceuptech/launchpad/utils"
 	"github.com/spaceuptech/launchpad/utils/auth"
 )
 
@@ -28,7 +27,7 @@ func New(s *Config, a *auth.Config, jwtPublicKeyPath, jwtPrivatePath string) (*S
 		fmt.Errorf("error creating an instance of auth module - %v", err)
 	}
 
-	c, err := config.New(utils.CommunityEdition)
+	c, err := config.New(auth)
 	if err != nil {
 		fmt.Errorf("error creating an instance of config - %v", err)
 	}

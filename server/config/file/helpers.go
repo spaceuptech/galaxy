@@ -1,44 +1,59 @@
 package file
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
-
-	"gopkg.in/yaml.v2"
+	"net/http"
 
 	"github.com/spaceuptech/launchpad/model"
 	"github.com/spaceuptech/launchpad/utils"
 )
 
-func (m *Manager) StoreConfigToFile(ctx context.Context, config *Config) error {
-	m.Lock()
-	defer m.Unlock()
-
-	m.galaxyConfig = config
-
-	data, err := yaml.Marshal(config)
-	if err != nil {
-		return fmt.Errorf("error yaml marshalling while storing config - %v", err)
-	}
-
-	return ioutil.WriteFile(utils.ConfigFilePath, data, 0644)
+func getCrudEndpoint(tableName, OperationType string) string {
+	return fmt.Sprintf("%s/%s/%s", utils.CrudEndpoint, tableName, OperationType)
 }
 
-// remove removes specified element in slice
-// NOTE: IT DOESN'T PRESERVE ORDER
-func remove(arr interface{}, index int) (interface{}, error) {
-	switch s := arr.(type) {
-	case []*model.Project:
-		s[index] = s[len(s)-1]
-		return s[:len(s)-1], nil
-	case []*model.Environment:
-		s[index] = s[len(s)-1]
-		return s[:len(s)-1], nil
-	case []*model.Cluster:
-		s[index] = s[len(s)-1]
-		return s[:len(s)-1], nil
-	default:
-		return nil, fmt.Errorf("error removing from specified index incorrect type")
+func (m *Manager) addProject(req *model.CreateProject) error {
+	envs, err := json.Marshal(req.Environments)
+	if err != nil {
+		return fmt.Errorf("error adding project unable to marshal environments - %v", err)
 	}
+	h := &utils.HttpModel{
+		Method:  http.MethodPost,
+		Url:     getCrudEndpoint(utils.TableProjects, utils.OpCreate),
+		Headers: nil,
+		Params: &CrudRequestBody{
+			Op: utils.OpOne,
+			Doc: map[string]interface{}{
+				utils.ProjectID:         req.ID,
+				utils.ProjectAccount:    m.accountID,
+				utils.ProjectDefaultEnv: req.DefaultEnvironment,
+				utils.ProjectEnvs:       envs,
+			}},
+		FunctionCallType: utils.SimpleRequest,
+	}
+	_, err = utils.HttpRequest(h)
+	if err != nil {
+		return fmt.Errorf("error adding project - %v", err)
+	}
+	return nil
+}
+
+func (m *Manager) updateProject(req *model.TableProjects) error {
+	// TODO CHECK METHOD FOR UPDATE
+	h := &utils.HttpModel{
+		Method:  http.MethodPost,
+		Url:     getCrudEndpoint(utils.TableProjects, utils.OpUpdate),
+		Headers: nil,
+		Params: &CrudRequestBody{
+			Op:  utils.OpOne,
+			Doc: req,
+		},
+		FunctionCallType: utils.SimpleRequest,
+	}
+	_, err := utils.HttpRequest(h)
+	if err != nil {
+		return fmt.Errorf("error updating project - %v", err)
+	}
+	return nil
 }

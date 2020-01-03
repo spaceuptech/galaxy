@@ -21,6 +21,27 @@ const (
 	// Config file
 	ConfigFilePath = "config.yaml"
 
-	// Config Init
-	CommunityEdition = "ce"
+	// DB operations
+	OpAll    = "all"
+	OpOne    = "one"
+	OpUpsert = "upsert"
+
+	// SC crud operation endpoint
+	CrudEndpoint = "http://localhost:4122/v1/api/spacegalaxy/crud/postgres"
+	// SC crud operations
+	OpCreate = "create"
+	OpRead   = "read"
+	OpUpdate = "update"
+	OpDelete = "delete"
+
+	// SC table names
+	TableProjects = "projects"
+	TableClusters = "clusters"
+	TableAccounts = "accounts"
+
+	// Sc project table fields
+	ProjectID         = "project_id"
+	ProjectAccount    = "account_id"
+	ProjectDefaultEnv = "default_environment"
+	ProjectEnvs       = "environments"
 )

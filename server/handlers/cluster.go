@@ -47,7 +47,12 @@ func HandleClusterRegistration(auth *auth.Module) http.HandlerFunc {
 				case <-done:
 					return
 				case <-ticker.C:
-					_, err := utils.HttpRequest(http.MethodPost, request.Url, map[string]string{}, nil, utils.Ping)
+					h := &utils.HttpModel{
+						Method:           http.MethodPost,
+						Url:              request.Url,
+						FunctionCallType: utils.SimpleRequest,
+					}
+					_, err := utils.HttpRequest(h)
 					if err != nil {
 						if clusterAliveCount == utils.MaximumPingRetries {
 							// TODO UPDATE THE CLUSTER STATUS TO DEAD IN DATABASE
