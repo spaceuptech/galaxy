@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -25,11 +26,12 @@ func HandleAddProject(auth *auth.Module, galaxyConfig *config.Module) http.Handl
 		json.NewDecoder(r.Body).Decode(req)
 
 		// token verification
-		if _, err := auth.VerifyToken(utils.GetTokenFromHeader(r)); err != nil {
+		token, err := auth.VerifyToken(utils.GetTokenFromHeader(r))
+		if err != nil {
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 		}
 
-		if err := galaxyConfig.AddProject(ctx, req); err != nil {
+		if err := galaxyConfig.AddProject(ctx, token["account"].(string), req); err != nil {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 		}
 
@@ -37,6 +39,7 @@ func HandleAddProject(auth *auth.Module, galaxyConfig *config.Module) http.Handl
 	}
 }
 
+// TODO RETURN AFFTER SENDING SUCCES RESPONSE
 func HandleGetProject(auth *auth.Module, galaxyConfig *config.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -46,19 +49,26 @@ func HandleGetProject(auth *auth.Module, galaxyConfig *config.Module) http.Handl
 
 		// token verification
 		// token verification
-		if _, err := auth.VerifyToken(utils.GetTokenFromHeader(r)); err != nil {
+		token, err := auth.VerifyToken(utils.GetTokenFromHeader(r))
+		if err != nil {
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 		}
 
-		projectID := mux.Vars(r)["projectID"]
-		project, err := galaxyConfig.GetProject(ctx, projectID)
+		projectID := mux.Vars(r)["serviceID"]
+		projects, err := galaxyConfig.GetProject(ctx, token["account"].(string), projectID)
 		if err != nil {
 			// TODO WILL THIS CAUSE RACE CONDITION
 			utils.SendErrorResponse(w, r, http.StatusNotFound, err)
+			return
+		}
+
+		if len(projects) == 0 {
+			utils.SendErrorResponse(w, r, http.StatusNotFound, fmt.Errorf("error specified project doesn't exist in database"))
+			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"project": project})
+		json.NewEncoder(w).Encode(map[string]interface{}{"project": projects[0]})
 	}
 }
 
@@ -71,11 +81,12 @@ func HandleGetProjects(auth *auth.Module, galaxyConfig *config.Module) http.Hand
 
 		// TODO TEST VEFIY TOKEN AS PUBLIC KEY WAS NOT GIVEN BUT ERROR WAS NOT THRON PANIC
 		// token verification
-		if _, err := auth.VerifyToken(utils.GetTokenFromHeader(r)); err != nil {
+		token, err := auth.VerifyToken(utils.GetTokenFromHeader(r))
+		if err != nil {
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 		}
 
-		projects, err := galaxyConfig.GetProjects(ctx)
+		projects, err := galaxyConfig.GetProjects(ctx, token["account"].(string))
 		if err != nil {
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 		}
@@ -92,13 +103,15 @@ func HandleDeleteProject(auth *auth.Module, galaxyConfig *config.Module) http.Ha
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
+		//
 		// token verification
-		if _, err := auth.VerifyToken(utils.GetTokenFromHeader(r)); err != nil {
+		token, err := auth.VerifyToken(utils.GetTokenFromHeader(r))
+		if err != nil {
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 		}
 
-		projectID := mux.Vars(r)["projectID"]
-		if err := galaxyConfig.DeleteProject(ctx, projectID); err != nil {
+		projectID := mux.Vars(r)["serviceID"]
+		if err := galaxyConfig.DeleteProject(ctx, token["account"].(string), projectID); err != nil {
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 		}
 

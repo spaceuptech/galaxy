@@ -21,7 +21,10 @@ type Server struct {
 }
 
 // New creates a new launchpad server instance
-func New(s *Config, a *auth.Config, jwtPublicKeyPath, jwtPrivatePath string) (*Server, error) {
+func New(port, jwtPublicKeyPath, jwtPrivatePath, username, key string) (*Server, error) {
+
+	// auth instance
+	a := auth.Init(auth.Server, username, key)
 	auth, err := auth.New(a, jwtPublicKeyPath, jwtPrivatePath)
 	if err != nil {
 		fmt.Errorf("error creating an instance of auth module - %v", err)
@@ -34,7 +37,7 @@ func New(s *Config, a *auth.Config, jwtPublicKeyPath, jwtPrivatePath string) (*S
 
 	return &Server{
 		router:       mux.NewRouter(),
-		config:       s,
+		config:       &Config{Port: port},
 		auth:         auth,
 		galacyConfig: c,
 	}, nil

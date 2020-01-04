@@ -48,12 +48,10 @@ func HandleClusterRegistration(auth *auth.Module) http.HandlerFunc {
 					return
 				case <-ticker.C:
 					h := &utils.HttpModel{
-						Method:           http.MethodPost,
-						Url:              request.Url,
-						FunctionCallType: utils.SimpleRequest,
+						Method: http.MethodPost,
+						Url:    request.Url,
 					}
-					_, err := utils.HttpRequest(h)
-					if err != nil {
+					if err := utils.HttpRequest(h); err != nil {
 						if clusterAliveCount == utils.MaximumPingRetries {
 							// TODO UPDATE THE CLUSTER STATUS TO DEAD IN DATABASE
 							if _, err := updateCluster(ctx, request, utils.ClusterDead); err != nil {
@@ -98,15 +96,16 @@ func HandleAddProjectCluster(auth *auth.Module, galaxyConfig *config.Module) htt
 		json.NewDecoder(r.Body).Decode(req)
 
 		// token verification
-		if _, err := auth.VerifyToken(utils.GetTokenFromHeader(r)); err != nil {
+		token, err := auth.VerifyToken(utils.GetTokenFromHeader(r))
+		if err != nil {
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 		}
 
 		vars := mux.Vars(r)
-		projectID := vars["projectID"]
+		projectID := vars["serviceID"]
 		EnvironmentID := vars["environmentID"]
 
-		if err := galaxyConfig.AddProjectCluster(ctx, projectID, EnvironmentID, req); err != nil {
+		if err := galaxyConfig.AddProjectCluster(ctx, token["account"].(string), projectID, EnvironmentID, req); err != nil {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 		}
 
@@ -122,16 +121,17 @@ func HandleDeleteProjectCluster(auth *auth.Module, galaxyConfig *config.Module) 
 		defer cancel()
 
 		// token verification
-		if _, err := auth.VerifyToken(utils.GetTokenFromHeader(r)); err != nil {
+		token, err := auth.VerifyToken(utils.GetTokenFromHeader(r))
+		if err != nil {
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 		}
 
 		vars := mux.Vars(r)
-		projectID := vars["projectID"]
+		projectID := vars["serviceID"]
 		EnvironmentID := vars["environmentID"]
 		clusterID := vars["clusterID"]
 
-		if err := galaxyConfig.DeleteProjectCluster(ctx, projectID, EnvironmentID, clusterID); err != nil {
+		if err := galaxyConfig.DeleteProjectCluster(ctx, token["account"].(string), projectID, EnvironmentID, clusterID); err != nil {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 		}
 

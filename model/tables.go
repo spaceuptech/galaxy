@@ -9,8 +9,9 @@ type TableProjects struct {
 }
 
 // schema of table services
-type TableService struct {
-	Environment string `json:"environments,omitempty"`
+type TableServices struct {
+	ID          string `json:"id,omitempty"`
+	Environment string `json:"environment,omitempty"`
 	ProjectID   string `json:"project_id,omitempty"`
 	ServiceID   string `json:"service_id,omitempty"`
 	Clusters    string `json:"clusters,omitempty"` // csv

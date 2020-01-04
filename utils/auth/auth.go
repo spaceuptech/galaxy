@@ -21,13 +21,13 @@ type Module struct {
 // Config is the object used to configure the auth module
 type Config struct {
 	// JWT related stuff
-	PublicKey  *rsa.PublicKey  // for RSA
-	PrivateKey *rsa.PrivateKey // for RSA
+	publicKey  *rsa.PublicKey  // for RSA
+	privateKey *rsa.PrivateKey // for RSA
 	Secret     string          // for HSA
 
 	// User authentication
-	UserName string
-	Key      string
+	userName string
+	key      string
 
 	// For proxy authentication
 	ProxySecret string
@@ -45,6 +45,10 @@ const (
 	// Server indicates that the operating mode is server
 	Server OperatingMode = "server"
 )
+
+func Init(mode OperatingMode, username, key string) *Config {
+	return &Config{userName: username, key: key, Mode: mode}
+}
 
 // New creates a new instance of the auth module
 func New(config *Config, jwtPublicKeyPath, jwtPrivatePath string) (*Module, error) {
@@ -83,8 +87,8 @@ func New(config *Config, jwtPublicKeyPath, jwtPrivatePath string) (*Module, erro
 			fmt.Errorf("error parsing public key")
 		}
 
-		m.config.PrivateKey = privateKey
-		m.config.PublicKey = publicKey
+		m.config.privateKey = privateKey
+		m.config.publicKey = publicKey
 	}
 
 	return m, nil

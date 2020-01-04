@@ -36,7 +36,7 @@ func (m *Module) setPublicKey(pemData string) error {
 	}
 
 	// Set the public key
-	m.config.PublicKey = key
+	m.config.publicKey = key
 	logrus.Infoln("Public key of launchpad server set successfully")
 	return nil
 }

@@ -11,6 +11,6 @@ type Manager struct {
 
 // TODO READ CONFIG DURING INIT
 
-func Init() (*Manager, error) {
-	return &Manager{}, nil
+func Init(username string) (*Manager, error) {
+	return &Manager{accountID: username}, nil
 }

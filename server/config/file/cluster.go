@@ -10,8 +10,8 @@ import (
 	"github.com/spaceuptech/launchpad/utils"
 )
 
-func (m *Manager) AddProjectCluster(ctx context.Context, projectID, environmentID string, req *model.Cluster) error {
-	projects, err := m.GetProject(ctx, projectID)
+func (m *Manager) AddProjectCluster(ctx context.Context, accountID, projectID, environmentID string, req *model.Cluster) error {
+	projects, err := m.GetProject(ctx, projectID, accountID)
 	if err != nil {
 		return fmt.Errorf("error adding cluster - %v", err)
 	}
@@ -19,7 +19,7 @@ func (m *Manager) AddProjectCluster(ctx context.Context, projectID, environmentI
 	if len(projects) == 1 {
 		project := projects[0]
 		envs := []*model.Environment{}
-		if err := json.Unmarshal([]byte(project.Environments), envs); err != nil {
+		if err := json.Unmarshal([]byte(project.Environments), &envs); err != nil {
 			return fmt.Errorf("error adding cluster unable to unmarshal envs - %v", err)
 		}
 
@@ -41,14 +41,14 @@ func (m *Manager) AddProjectCluster(ctx context.Context, projectID, environmentI
 				return fmt.Errorf("error adding cluster unable to marshal envs - %v", err)
 			}
 			project.Environments = string(data)
-			return m.updateProject(project)
+			return m.updateProject(accountID, &project)
 		}
 	}
 	return fmt.Errorf("error adding cluster project length not equal to one")
 }
 
-func (m *Manager) DeleteProjectCluster(ctx context.Context, projectID, environmentID, clusterID string) error {
-	projects, err := m.GetProject(ctx, projectID)
+func (m *Manager) DeleteProjectCluster(ctx context.Context, accountID, projectID, environmentID, clusterID string) error {
+	projects, err := m.GetProject(ctx, projectID, accountID)
 	if err != nil {
 		return fmt.Errorf("error adding cluster - %v", err)
 	}
@@ -56,7 +56,7 @@ func (m *Manager) DeleteProjectCluster(ctx context.Context, projectID, environme
 	if len(projects) == 1 {
 		project := projects[0]
 		envs := []*model.Environment{}
-		if err := json.Unmarshal([]byte(project.Environments), envs); err != nil {
+		if err := json.Unmarshal([]byte(project.Environments), &envs); err != nil {
 			return fmt.Errorf("error adding cluster unable to unmarshal envs - %v", err)
 		}
 
@@ -73,7 +73,7 @@ func (m *Manager) DeleteProjectCluster(ctx context.Context, projectID, environme
 							return fmt.Errorf("error deleting cluster unable to marshal envs - %v", err)
 						}
 						project.Environments = string(data)
-						return m.updateProject(project)
+						return m.updateProject(accountID, &project)
 					}
 				}
 			}
@@ -86,24 +86,22 @@ func (m *Manager) DeleteProjectCluster(ctx context.Context, projectID, environme
 }
 
 func (m *Manager) GetCluster(clusterID string) (*model.TableClusters, error) {
+	clusters := map[string][]model.TableClusters{}
 	h := &utils.HttpModel{
-		Method:  http.MethodGet,
-		Url:     getCrudEndpoint(utils.TableClusters, utils.OpRead),
-		Headers: nil,
+		Method:   http.MethodPost,
+		Url:      getCrudEndpoint(utils.TableClusters, utils.OpRead),
+		Response: &clusters,
 		Params: CrudRequestBody{
 			Op:   utils.OpOne,
 			Find: &model.TableClusters{ClusterID: clusterID},
 		},
-		FunctionCallType: utils.SimpleRequest,
 	}
-	resp, err := utils.HttpRequest(h)
+	err := utils.HttpRequest(h)
 	if err != nil {
 		return nil, fmt.Errorf("error getting cluster - %v", err)
 	}
-	// TODO CONFIRM THIS
-	clusters, ok := resp["result"].([]*model.TableClusters)
-	if !ok {
-		return nil, fmt.Errorf("error getting cluster info - %v", err)
+	if len(clusters) != 0 {
+		return &clusters["result"][0], nil
 	}
-	return clusters[0], nil
+	return nil, fmt.Errorf("error getting cluster specified cluster not found")
 }

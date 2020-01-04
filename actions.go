@@ -107,18 +107,13 @@ func actionServer(c *cli.Context) error {
 	// Set the log level
 	setLogLevel(loglevel)
 
-	// server instance
-	s := &server.Config{Port: port}
-	// auth instance
-	a := &auth.Config{Mode: auth.Server, UserName: authUsername, Key: authKey}
-
-	server, err := server.New(s, a, jwtPublicKeyPath, jwtPrivatePath)
+	s, err := server.New(port, jwtPublicKeyPath, jwtPrivatePath, authUsername, authKey)
 	if err != nil {
 		return err
 	}
-	server.InitRoutes()
+	s.InitRoutes()
 
-	return server.Start()
+	return s.Start()
 }
 
 func setLogLevel(loglevel string) {

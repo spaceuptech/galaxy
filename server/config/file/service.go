@@ -11,98 +11,112 @@ import (
 	"github.com/spaceuptech/launchpad/utils"
 )
 
-// TODO SET HEADERS OF HTTP REQUEST TO APPLICATION JSON ?
+// TODO SHOULD I CHECK IF PROJECT EXISTS OR GRACEFULLY HANDLE IT WHILE PROJECT CREATION OR UPDATION
+// UpsertService upserts in services table & calls web hook if upsertion operation is successful
 func (m *Manager) UpsertService(ctx context.Context, req *model.Service) error {
 	// convert cluster to csv string
-	clusters := "" // csv of clusters
+	clusters := ""
 	for _, cluster := range req.Clusters {
 		clusters += fmt.Sprintf("%s,", cluster)
 	}
 	clusters = strings.TrimSuffix(clusters, ",")
 
+	// store service config as json string in database
 	config, err := json.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("error upserting service unable to marshal - %v", err)
 	}
-	// TODO IS CREATE ENDPOINT WILL UPSERT ?
+
+	// send http request to space cloud for db operation
+	resp := map[string]interface{}{}
 	h := &utils.HttpModel{
-		Method: http.MethodPost,
-		Url:    getCrudEndpoint(utils.TableServices, utils.OpCreate),
+		Method:   http.MethodPost,
+		Url:      getCrudEndpoint(utils.TableServices, utils.OpUpdate),
+		Response: &resp,
 		Params: &CrudRequestBody{
 			Op: utils.OpUpsert,
-			Doc: &model.TableService{
-				Environment: req.Environment,
-				ProjectID:   req.ProjectID,
-				ServiceID:   req.ID,
-				Clusters:    clusters,
-				Config:      string(config),
-				Version:     req.Version,
+			Update: map[string]interface{}{
+				"$set": &model.TableServices{
+					Environment: req.Environment,
+					ProjectID:   req.ProjectID,
+					ServiceID:   req.ID,
+					Clusters:    clusters,
+					Config:      string(config),
+					Version:     req.Version,
+				},
 			},
-			Find: map[string]interface{}{"service_id": req.ID},
+			Find: &model.TableServices{ProjectID: req.ProjectID, ServiceID: req.ID},
 		},
-		FunctionCallType: utils.SimpleRequest,
 	}
-	_, err = utils.HttpRequest(h)
-	if err != nil {
-		return fmt.Errorf("error upserting service - %v", err)
+	if err = utils.HttpRequest(h); err != nil {
+		return fmt.Errorf("error upserting service - %v %v", err, resp["error"])
 	}
 	return nil
 }
 
-func (m *Manager) DeleteService(ctx context.Context, serviceID string) error {
+// DeleteService deletes specified service from services table & calls web hook if deletion is successful
+func (m *Manager) DeleteService(ctx context.Context, projectID, environmentID, serviceID string) error {
+	// send http request to space cloud for db operation
 	h := &utils.HttpModel{
-		Method: http.MethodDelete,
+		Method: http.MethodPost,
 		Url:    getCrudEndpoint(utils.TableServices, utils.OpDelete),
 		Params: &CrudRequestBody{
 			Op:   utils.OpOne,
-			Find: &model.TableService{ServiceID: serviceID},
+			Find: &model.TableServices{ProjectID: projectID, Environment: environmentID, ServiceID: serviceID},
 		},
-		FunctionCallType: utils.SimpleRequest,
 	}
-	_, err := utils.HttpRequest(h)
-	if err != nil {
+	if err := utils.HttpRequest(h); err != nil {
 		return fmt.Errorf("error deleting service - %v", err)
 	}
 	return nil
 }
 
-func (m *Manager) ApplyService(ctx context.Context, req *model.Service) error {
-	cluster, err := m.GetCluster(req.ID)
-	if err != nil {
-		return fmt.Errorf("error applying service - %v", err)
+// TODO for updating service i need to delete the existing service how to do that
+// ApplyServiceToClusters applies specified service to all the clusters in service config
+func (m *Manager) ApplyServiceToClusters(ctx context.Context, req *model.Service) error {
+	for _, clusterID := range req.Clusters {
+		// get specified cluster info
+		cluster, err := m.GetCluster(clusterID)
+		if err != nil {
+			return fmt.Errorf("error applying service - %v", err)
+		}
+
+		// send http request to space cloud for db operation
+		resp := map[string]interface{}{}
+		h := &utils.HttpModel{
+			Method:   http.MethodPost,
+			Url:      fmt.Sprintf("%s/v1/launchpad/service", cluster.Url),
+			Params:   req,
+			Response: &resp,
+		}
+		if err = utils.HttpRequest(h); err != nil {
+			return fmt.Errorf("error unable to apply service - %v %v", err, resp["error"])
+		}
 	}
 
-	h := &utils.HttpModel{
-		Method:           http.MethodPost,
-		Url:              cluster.Url,
-		Params:           req,
-		FunctionCallType: utils.SimpleRequest,
-	}
-	_, err = utils.HttpRequest(h)
-	if err != nil {
-		fmt.Errorf("error unable to apply service - %v", err)
-	}
 	return nil
 }
 
-// TODO I GUESS THIS FUNCTION IS NOT USED
-// GetProject returns the specified project config if it exists in database
-func (m *Manager) getService(ctx context.Context, projectID string) ([]*model.TableProjects, error) {
-	// get specified project from database
-	h := &utils.HttpModel{
-		Method:  http.MethodGet,
-		Url:     getCrudEndpoint(utils.TableProjects, utils.OpRead),
-		Headers: nil,
-		Params: &CrudRequestBody{
-			Op:   utils.OpAll,
-			Find: &model.TableProjects{ProjectID: projectID, AccountID: m.accountID}},
-		FunctionCallType: utils.SimpleRequest,
+func (m *Manager) DeleteServiceFromClusters(ctx context.Context, req *model.Service) error {
+	for _, clusterID := range req.Clusters {
+		// get specified cluster info
+		cluster, err := m.GetCluster(clusterID)
+		if err != nil {
+			return fmt.Errorf("error deleting service from cluster- %v", err)
+		}
+
+		// send http request to space cloud for db operation
+		resp := map[string]interface{}{}
+		h := &utils.HttpModel{
+			Method:   http.MethodDelete,
+			Url:      fmt.Sprintf("%s/v1/launchpad/service", cluster.Url),
+			Params:   req,
+			Response: &resp,
+		}
+		if err = utils.HttpRequest(h); err != nil {
+			return fmt.Errorf("error unable to delete service from cluster- %v %v", err, resp["error"])
+		}
 	}
-	projects, err := utils.HttpRequest(h)
-	if err != nil {
-		return nil, fmt.Errorf("error getting specified project - %v", err)
-	}
-	// TODO IN CREATEPROJECT ENV WILL BE STRING FOR DB OPERATION BUT []ENVS FOR REST APIS
-	// TODO SHOULD I KEEP THE MARSHALLING RESPONSIBLITY TO FRONTEND ? OR SHOULD I HANDLE IT
-	return projects["result"].([]*model.TableProjects), nil
+
+	return nil
 }

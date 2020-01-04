@@ -10,6 +10,11 @@ import (
 func TestHandleLogin(t *testing.T) {
 	loginEndpoint := "http://localhost:4050/v1/galaxy/login"
 
+	h := &utils.HttpModel{
+		Method: http.MethodPost,
+		Url:    loginEndpoint,
+	}
+
 	testCases := []struct {
 		name          string
 		httpBody      map[string]interface{}
@@ -35,7 +40,10 @@ func TestHandleLogin(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			resp, gotErr := utils.HttpRequest(http.MethodPost, loginEndpoint, nil, testCase.httpBody, utils.SimpleRequest)
+			h.Params = testCase.httpBody
+			resp := map[string]interface{}{}
+			h.Response = &resp
+			gotErr := utils.HttpRequest(h)
 			if (gotErr != nil) != testCase.isErrExpected {
 				t.Errorf("Error login got, %v wanted, %v", gotErr, testCase.isErrExpected)
 			}

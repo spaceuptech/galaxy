@@ -12,6 +12,15 @@ import (
 func TestHandleAddEnvironment(t *testing.T) {
 	loginEndpoint := "http://localhost:4050/v1/galaxy/login"
 
+	h := &utils.HttpModel{
+		Method: http.MethodPost,
+		Url:    loginEndpoint,
+		Params: map[string]interface{}{
+			"username": "admin",
+			"key":      "1234",
+		},
+	}
+
 	testCases := []struct {
 		name          string
 		projectID     string
@@ -22,14 +31,14 @@ func TestHandleAddEnvironment(t *testing.T) {
 	}{
 		{
 			name:          "Adding environment env2",
-			projectID:     "new1",
-			environmentID: "evn",
+			projectID:     "new2",
+			environmentID: "evn12",
 			loginInfo: map[string]interface{}{
 				"username": "admin",
 				"key":      "1234",
 			},
 			httpBody: &model.Environment{
-				ID: "env2",
+				ID: "env12",
 				Clusters: []*model.Cluster{
 					{
 						ID: "cluster1",
@@ -42,9 +51,9 @@ func TestHandleAddEnvironment(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			DeleteProjectEndpoint := fmt.Sprintf("http://localhost:4050/v1/galaxy/project/%s/%s", testCase.projectID, testCase.environmentID)
-
-			resp, gotErr := utils.HttpRequest(http.MethodPost, loginEndpoint, nil, testCase.loginInfo, utils.SimpleRequest)
+			resp := map[string]interface{}{}
+			h.Response = &resp
+			gotErr := utils.HttpRequest(h)
 			if (gotErr != nil) != testCase.isErrExpected {
 				t.Errorf("Error login got, %v wanted, %v", gotErr, testCase.isErrExpected)
 			}
@@ -52,10 +61,12 @@ func TestHandleAddEnvironment(t *testing.T) {
 			if token, ok := resp["token"]; !ok {
 				t.Logf("token not found")
 			} else {
-				// t.Logf("token %s", token)
-				_, gotErr := utils.HttpRequest(http.MethodPost, DeleteProjectEndpoint, map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}, testCase.httpBody, utils.SimpleRequest)
+				h.Url = fmt.Sprintf("http://localhost:4050/v1/galaxy/project/%s/%s", testCase.projectID, testCase.environmentID)
+				h.Headers = map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}
+				h.Params = testCase.httpBody
+				gotErr := utils.HttpRequest(h)
 				if (gotErr != nil) != testCase.isErrExpected {
-					t.Errorf("Error delete project got, %v wanted, %v", gotErr, testCase.isErrExpected)
+					t.Errorf("Error adding environment got, %v -%v wanted, %v", gotErr, resp["error"], testCase.isErrExpected)
 				}
 			}
 		})
@@ -65,30 +76,34 @@ func TestHandleAddEnvironment(t *testing.T) {
 func TestHandleDeleteEnvironment(t *testing.T) {
 	loginEndpoint := "http://localhost:4050/v1/galaxy/login"
 
+	h := &utils.HttpModel{
+		Method: http.MethodPost,
+		Url:    loginEndpoint,
+		Params: map[string]interface{}{
+			"username": "admin",
+			"key":      "1234",
+		},
+	}
+
 	testCases := []struct {
 		name          string
 		projectID     string
 		environmentID string
-		loginInfo     map[string]interface{}
 		isErrExpected bool
 	}{
 		{
 			name:          "Deleting environment env1",
-			projectID:     "new1",
-			environmentID: "env2",
-			loginInfo: map[string]interface{}{
-				"username": "admin",
-				"key":      "1234",
-			},
+			projectID:     "new2",
+			environmentID: "env12",
 			isErrExpected: false,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			ProjectEnvironmentEndpoint := fmt.Sprintf("http://localhost:4050/v1/galaxy/project/%s/%s", testCase.projectID, testCase.environmentID)
-
-			resp, gotErr := utils.HttpRequest(http.MethodPost, loginEndpoint, nil, testCase.loginInfo, utils.SimpleRequest)
+			resp := map[string]interface{}{}
+			h.Response = &resp
+			gotErr := utils.HttpRequest(h)
 			if (gotErr != nil) != testCase.isErrExpected {
 				t.Errorf("Error login got, %v wanted, %v", gotErr, testCase.isErrExpected)
 			}
@@ -96,9 +111,12 @@ func TestHandleDeleteEnvironment(t *testing.T) {
 			if token, ok := resp["token"]; !ok {
 				t.Logf("token not found")
 			} else {
-				_, gotErr := utils.HttpRequest(http.MethodDelete, ProjectEnvironmentEndpoint, map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}, nil, utils.SimpleRequest)
+				h.Method = http.MethodDelete
+				h.Url = fmt.Sprintf("http://localhost:4050/v1/galaxy/project/%s/%s", testCase.projectID, testCase.environmentID)
+				h.Headers = map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}
+				gotErr := utils.HttpRequest(h)
 				if (gotErr != nil) != testCase.isErrExpected {
-					t.Errorf("Error delete project got, %v wanted, %v", gotErr, testCase.isErrExpected)
+					t.Errorf("Error deleting environment got, %v -%v wanted, %v", gotErr, resp["error"], testCase.isErrExpected)
 				}
 			}
 		})

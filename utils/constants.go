@@ -9,8 +9,7 @@ const (
 	GraphqlMutation
 
 	// HTTP
-	Ping = iota
-	SimpleRequest
+	SimpleRequest = iota
 
 	MaximumPingRetries
 

@@ -11,5 +11,6 @@ type CrudRequestBody struct {
 	Op      string                 `json:"op"`
 	Doc     interface{}            `json:"doc,omitempty"`
 	Find    interface{}            `json:"find,omitempty"`
+	Update  interface{}            `json:"update,omitempty"`
 	Options map[string]interface{} `json:"options,omitempty"`
 }

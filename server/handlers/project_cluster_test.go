@@ -12,6 +12,10 @@ import (
 func TestHandleClusterRegistration(t *testing.T) {
 	clusterRegistrationEndpoint := "http://localhost:4122/v1/galaxy/register-cluster"
 	// TODO TOKEN CREATION IN FILE & SETTING IN HTTP HEADERS
+	h := &utils.HttpModel{
+		Method: http.MethodPost,
+		Url:    clusterRegistrationEndpoint,
+	}
 	tests := []struct {
 		name          string
 		httpBody      model.RegisterClusterRequest
@@ -30,11 +34,12 @@ func TestHandleClusterRegistration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			response, err := utils.HttpRequest(http.MethodPost, clusterRegistrationEndpoint, nil, tt.httpBody, utils.SimpleRequest)
+			h.Params = tt.httpBody
+			err := utils.HttpRequest(h)
 			if err != nil {
 				t.Error(err)
 			}
-			log.Println("Response from space galaxy ", response)
+			log.Println("Response from space galaxy ", h.Response)
 			// v := response.(map[string]interface{})
 			// log.Println("v", v)
 			// value, ok := v["error"]

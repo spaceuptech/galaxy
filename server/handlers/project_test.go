@@ -9,68 +9,71 @@ import (
 	"github.com/spaceuptech/launchpad/utils"
 )
 
-// TODO send TOKEN FROM HEADER
-
 func TestHandleAddProject(t *testing.T) {
 	loginEndpoint := "http://localhost:4050/v1/galaxy/login"
 	createProjectEndpoint := "http://localhost:4050/v1/galaxy/project/create"
 
+	h := &utils.HttpModel{
+		Method: http.MethodPost,
+		Url:    loginEndpoint,
+		Params: map[string]interface{}{
+			"username": "admin",
+			"key":      "1234",
+		},
+	}
+
 	testCases := []struct {
 		name          string
-		loginInfo     map[string]interface{}
 		httpBody      *model.CreateProject
 		isErrExpected bool
 	}{
 		{
 			name: "Add project new1",
-			loginInfo: map[string]interface{}{
-				"username": "admin",
-				"key":      "1234",
-			},
 			httpBody: &model.CreateProject{
-				ID: "new1",
+				ID:                 "new6",
+				DefaultEnvironment: "production",
 				Environments: []*model.Environment{
 					{
 						ID:       "env1",
-						Clusters: []*model.Cluster{&model.Cluster{ID: "cluster1"}},
+						Clusters: []*model.Cluster{{ID: "cluster1"}},
 					},
 				},
 			},
 			isErrExpected: false,
 		},
-		{
-			name: "Add project new2",
-			loginInfo: map[string]interface{}{
-				"username": "admin",
-				"key":      "1234",
-			},
-			httpBody: &model.CreateProject{
-				ID: "new2",
-				Environments: []*model.Environment{
-					{
-						ID:       "env2",
-						Clusters: []*model.Cluster{{ID: "cluster2"}},
-					},
-				},
-			},
-			isErrExpected: false,
-		},
+		// {
+		// 	name: "Add project new2",
+		// 	httpBody: &model.CreateProject{
+		// 		ID: "new2",
+		// 		Environments: []*model.Environment{
+		// 			{
+		// 				ID:       "env2",
+		// 				Clusters: []*model.Cluster{{ID: "cluster2"}},
+		// 			},
+		// 		},
+		// 	},
+		// 	isErrExpected: false,
+		// },
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			resp, gotErr := utils.HttpRequest(http.MethodPost, loginEndpoint, nil, testCase.loginInfo, utils.SimpleRequest)
+			resp := map[string]interface{}{}
+			h.Response = &resp
+			gotErr := utils.HttpRequest(h)
 			if (gotErr != nil) != testCase.isErrExpected {
-				t.Errorf("Error login got, %v wanted, %v", gotErr, testCase.isErrExpected)
+				t.Errorf("Error login got, %v wanted - %v, %v", gotErr, resp["error"], testCase.isErrExpected)
 			}
 
 			if token, ok := resp["token"]; !ok {
 				t.Logf("token not found")
 			} else {
-				// t.Logf("token %s", token)
-				_, gotErr := utils.HttpRequest(http.MethodPost, createProjectEndpoint, map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}, testCase.httpBody, utils.SimpleRequest)
+				h.Url = createProjectEndpoint
+				h.Params = testCase.httpBody
+				h.Headers = map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}
+				gotErr := utils.HttpRequest(h)
 				if (gotErr != nil) != testCase.isErrExpected {
-					t.Errorf("Error add project got, %v wanted, %v", gotErr, testCase.isErrExpected)
+					t.Errorf("Error add project, %v wanted - %v, %v", gotErr, resp["error"], testCase.isErrExpected)
 				}
 			}
 		})
@@ -80,38 +83,45 @@ func TestHandleAddProject(t *testing.T) {
 func TestHandleDeleteProject(t *testing.T) {
 	loginEndpoint := "http://localhost:4050/v1/galaxy/login"
 
+	h := &utils.HttpModel{
+		Method: http.MethodPost,
+		Url:    loginEndpoint,
+		Params: map[string]interface{}{
+			"username": "admin",
+			"key":      "1234",
+		},
+	}
+
 	testCases := []struct {
 		name          string
 		projectID     string
-		loginInfo     map[string]interface{}
 		isErrExpected bool
 	}{
 		{
-			name:      "Open source login test",
-			projectID: "new1",
-			loginInfo: map[string]interface{}{
-				"username": "admin",
-				"key":      "1234",
-			},
+			name:          "Open source login test",
+			projectID:     "new1",
 			isErrExpected: false,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			DeleteProjectEndpoint := fmt.Sprintf("http://localhost:4050/v1/galaxy/project/%s", testCase.projectID)
-
-			resp, gotErr := utils.HttpRequest(http.MethodPost, loginEndpoint, nil, testCase.loginInfo, utils.SimpleRequest)
+			resp := map[string]interface{}{}
+			h.Response = &resp
+			gotErr := utils.HttpRequest(h)
 			if (gotErr != nil) != testCase.isErrExpected {
-				t.Errorf("Error login got, %v wanted, %v", gotErr, testCase.isErrExpected)
+				t.Errorf("Error login got, %v  wanted, %v", gotErr, testCase.isErrExpected)
 			}
 
 			if token, ok := resp["token"]; !ok {
 				t.Logf("token not found")
 			} else {
-				_, gotErr := utils.HttpRequest(http.MethodDelete, DeleteProjectEndpoint, map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}, nil, utils.SimpleRequest)
+				h.Method = http.MethodDelete
+				h.Url = fmt.Sprintf("http://localhost:4050/v1/galaxy/project/%s", testCase.projectID)
+				h.Headers = map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}
+				gotErr := utils.HttpRequest(h)
 				if (gotErr != nil) != testCase.isErrExpected {
-					t.Errorf("Error delete project got, %v wanted, %v", gotErr, testCase.isErrExpected)
+					t.Errorf("Error delete project, %v wanted - %v, %v", gotErr, resp["error"], testCase.isErrExpected)
 				}
 			}
 		})
@@ -121,39 +131,50 @@ func TestHandleDeleteProject(t *testing.T) {
 func TestHandleGetProject(t *testing.T) {
 	// TODO REMOVE PRINT AND COMPARE TO THE ACTUAL VALUE IN TEST CASE
 	loginEndpoint := "http://localhost:4050/v1/galaxy/login"
-	GetProjectEndpoint := "http://localhost:4050/v1/galaxy/project/new1"
+
+	h := &utils.HttpModel{
+		Method: http.MethodPost,
+		Url:    loginEndpoint,
+		Params: map[string]interface{}{
+			"username": "admin",
+			"key":      "1234",
+		},
+	}
 
 	testCases := []struct {
 		name          string
-		loginInfo     map[string]interface{}
+		projectId     string
 		isErrExpected bool
 	}{
 		{
-			name: "Open source login test",
-			loginInfo: map[string]interface{}{
-				"username": "admin",
-				"key":      "1234",
-			},
+			name:          "Open source login test",
+			projectId:     "new2",
 			isErrExpected: false,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			resp, gotErr := utils.HttpRequest(http.MethodPost, loginEndpoint, nil, testCase.loginInfo, utils.SimpleRequest)
+			resp := map[string]interface{}{}
+			h.Response = &resp
+			gotErr := utils.HttpRequest(h)
 			if (gotErr != nil) != testCase.isErrExpected {
 				t.Errorf("Error login got, %v wanted, %v", gotErr, testCase.isErrExpected)
+				return
 			}
 
 			if token, ok := resp["token"]; !ok {
 				t.Logf("token not found")
 			} else {
-				// t.Logf("token %s", token)
-				resp, gotErr := utils.HttpRequest(http.MethodGet, GetProjectEndpoint, map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}, nil, utils.SimpleRequest)
+				h.Url = fmt.Sprintf("http://localhost:4050/v1/galaxy/project/%s", testCase.projectId)
+				h.Method = http.MethodGet
+				h.Headers = map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}
+				gotErr := utils.HttpRequest(h)
 				if (gotErr != nil) != testCase.isErrExpected {
-					t.Errorf("Error delete project got, %v wanted, %v", gotErr, testCase.isErrExpected)
+					t.Errorf("Error getting project, %v wanted - %v, %v", gotErr, resp["error"], testCase.isErrExpected)
+					return
 				}
-				t.Log("Get project response", resp)
+				t.Log("Get project response", h.Response)
 			}
 		})
 	}
@@ -164,37 +185,47 @@ func TestHandleGetProjects(t *testing.T) {
 	loginEndpoint := "http://localhost:4050/v1/galaxy/login"
 	GetProjectsEndpoint := "http://localhost:4050/v1/galaxy/projects"
 
+	h := &utils.HttpModel{
+		Method: http.MethodPost,
+		Url:    loginEndpoint,
+		Params: map[string]interface{}{
+			"username": "admin",
+			"key":      "1234",
+		},
+	}
+
 	testCases := []struct {
 		name          string
-		loginInfo     map[string]interface{}
 		isErrExpected bool
 	}{
 		{
-			name: "Open source login test",
-			loginInfo: map[string]interface{}{
-				"username": "admin",
-				"key":      "1234",
-			},
+			name:          "Open source login test",
 			isErrExpected: false,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			resp, gotErr := utils.HttpRequest(http.MethodPost, loginEndpoint, nil, testCase.loginInfo, utils.SimpleRequest)
+			resp := map[string]interface{}{}
+			h.Response = &resp
+			gotErr := utils.HttpRequest(h)
 			if (gotErr != nil) != testCase.isErrExpected {
 				t.Errorf("Error login got, %v wanted, %v", gotErr, testCase.isErrExpected)
+				return
 			}
 
 			if token, ok := resp["token"]; !ok {
 				t.Logf("token not found")
 			} else {
-				// t.Logf("token %s", token)
-				resp, gotErr := utils.HttpRequest(http.MethodGet, GetProjectsEndpoint, map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}, nil, utils.SimpleRequest)
+				h.Url = GetProjectsEndpoint
+				h.Method = http.MethodGet
+				h.Headers = map[string]string{"Authorization": fmt.Sprintf("Bearer %s", token)}
+				gotErr := utils.HttpRequest(h)
 				if (gotErr != nil) != testCase.isErrExpected {
-					t.Errorf("Error delete project got, %v wanted, %v", gotErr, testCase.isErrExpected)
+					t.Errorf("Error getting projects, %v wanted - %v, %v", gotErr, resp["error"], testCase.isErrExpected)
+					return
 				}
-				t.Log("Get project response", resp)
+				t.Log("Get project response", h.Response)
 			}
 		})
 	}

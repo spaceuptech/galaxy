@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -41,20 +42,23 @@ func FireGraphqlQuery(params *model.InsertRequest, responseType int) (interface{
 }
 
 type HttpModel struct {
-	Method           string
-	Url              string
-	Headers          map[string]string
-	Params           interface{}
-	FunctionCallType int
+	Method   string
+	Url      string
+	Headers  map[string]string
+	Params   interface{}
+	Response interface{}
 }
 
 // HttpRequest is a general function for sending http request to the provided url
-func HttpRequest(h *HttpModel) (map[string]interface{}, error) {
+func HttpRequest(h *HttpModel) error {
+	if h.Response == nil {
+		h.Response = &map[string]interface{}{}
+	}
 	// encode to json
 	requestBody := new(bytes.Buffer)
 	if h.Params != nil {
 		if err := json.NewEncoder(requestBody).Encode(h.Params); err != nil {
-			return nil, fmt.Errorf("error encoding body for http request %v", err)
+			return fmt.Errorf("error encoding body for http request %v", err)
 		}
 	}
 
@@ -63,7 +67,7 @@ func HttpRequest(h *HttpModel) (map[string]interface{}, error) {
 	// create http request
 	httpRequest, err := http.NewRequest(h.Method, h.Url, requestBody)
 	if err != nil {
-		return nil, fmt.Errorf("error creating http request - %v", err)
+		return fmt.Errorf("error creating http request - %v", err)
 	}
 
 	// set http headers
@@ -76,28 +80,17 @@ func HttpRequest(h *HttpModel) (map[string]interface{}, error) {
 	// make http request
 	resp, err := client.Do(httpRequest)
 	if err != nil {
-		return nil, fmt.Errorf("error sending http %s request - %v", h.Method, err)
+		return fmt.Errorf("error sending http %s request - %v", h.Method, err)
 	}
 	defer resp.Body.Close()
 
-	switch h.FunctionCallType {
-	case Ping:
-		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("error pinging cluster")
-		}
-		return nil, nil
-
-	case SimpleRequest:
-		body := map[string]interface{}{}
-		json.NewDecoder(resp.Body).Decode(&body)
-		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("error response from server with status code %v, error message - %v", resp.StatusCode, body["error"])
-		}
-		return body, nil
-
-	default:
-		return nil, fmt.Errorf("invalid response type")
+	json.NewDecoder(resp.Body).Decode(h.Response)
+	if resp.StatusCode != http.StatusOK {
+		log.Println("error", h.Response)
+		return fmt.Errorf("error response from server with status code %v", resp.StatusCode)
 	}
+	return nil
+
 }
 
 // GetTokenFromHeader returns the token from the request header

@@ -63,7 +63,7 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 	return &Istio{auth: auth, config: c, kube: kube, istio: istio}, nil
 }
 
-// ApplyService deploys the service on istio
+// ApplyServiceToClusters deploys the service on istio
 func (i *Istio) ApplyService(service *model.Service) error {
 	// TODO: do we need to rollback on failure? rollback to previous version if it existed else remove
 	// TODO: Add support for custom runtime

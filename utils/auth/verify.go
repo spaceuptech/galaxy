@@ -21,7 +21,7 @@ func (m *Module) VerifyToken(token string) (map[string]interface{}, error) {
 		var key interface{}
 
 		alg = jwt.SigningMethodRS256.Alg()
-		key = m.config.PublicKey
+		key = m.config.publicKey
 
 		// Don't forget to validate the alg is what you expect:
 		if token.Method.Alg() != alg {
@@ -49,7 +49,7 @@ func (m *Module) VerifyToken(token string) (map[string]interface{}, error) {
 }
 
 func (m *Module) VerifyCliLogin(userName, pass string) bool {
-	if userName == m.config.UserName && pass == m.config.Key {
+	if userName == m.config.userName && pass == m.config.key {
 		return true
 	}
 	return false
@@ -58,11 +58,11 @@ func (m *Module) VerifyCliLogin(userName, pass string) bool {
 func (m *Module) GenerateLoginToken() (string, error) {
 	token := jwt.New(jwt.SigningMethodRS256)
 	claims := make(jwt.MapClaims)
-	claims["account"] = m.config.UserName
+	claims["account"] = m.config.userName
 	claims["role"] = "admin"
 	token.Claims = claims
 
-	tokenString, err := token.SignedString(m.config.PrivateKey)
+	tokenString, err := token.SignedString(m.config.privateKey)
 	if err != nil {
 		return "", fmt.Errorf("error generating token for login - %v", err)
 	}

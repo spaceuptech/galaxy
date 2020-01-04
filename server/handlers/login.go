@@ -8,14 +8,17 @@ import (
 	"time"
 
 	"github.com/spaceuptech/launchpad/model"
+	"github.com/spaceuptech/launchpad/server/config"
+	"github.com/spaceuptech/launchpad/utils"
 	"github.com/spaceuptech/launchpad/utils/auth"
 )
 
-func HandleLogin(auth *auth.Module) http.HandlerFunc {
+// TODO HMAC TOKEN
+func HandleLogin(auth *auth.Module, galaxyConfig *config.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		v := new(model.CliLoginRequest)
@@ -29,14 +32,18 @@ func HandleLogin(auth *auth.Module) http.HandlerFunc {
 		// TODO SEND PROJECT IN RESPONSE
 		token, err := auth.GenerateLoginToken()
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]interface{}{"error": err.Error()})
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		// log.Println("generating token", token)
+
+		projects, err := galaxyConfig.GetProjects(ctx, v.Username)
+		if err != nil {
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			return
+		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"token": token})
+		json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": projects})
 		return
 	}
 }
