@@ -3,16 +3,26 @@ package driver
 import (
 	"fmt"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/runner/driver/istio"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 // New creates a new instance of the driver module
 func New(auth *auth.Module, c *Config) (Driver, error) {
 
 	switch c.DriverType {
-	case TypeIstio:
-		return NewIstioDriver(auth, c)
+	case model.TypeIstio:
+		// Generate the config file
+		var istioConfig *istio.Config
+		if c.IsInCluster {
+			istioConfig = istio.GenerateInClusterConfig()
+		} else {
+			istioConfig = istio.GenerateOutsideClusterConfig(c.ConfigFilePath)
+		}
+		istioConfig.SetProxyPort(c.ProxyPort)
+
+		return istio.NewIstioDriver(auth, istioConfig)
 	default:
 		return nil, fmt.Errorf("invalid driver type (%s) provided", c.DriverType)
 	}
@@ -20,7 +30,7 @@ func New(auth *auth.Module, c *Config) (Driver, error) {
 
 // Config describes the configuration required by the driver module
 type Config struct {
-	DriverType     Type
+	DriverType     model.DriverType
 	ConfigFilePath string
 	IsInCluster    bool
 	ProxyPort      uint32
@@ -31,14 +41,6 @@ type Driver interface {
 	CreateProject(project *model.Project) error
 	ApplyService(service *model.Service) error
 	AdjustScale(service *model.Service, activeReqs int32) error
-	WaitForService(project, service string) error
-	Type() Type
+	WaitForService(service *model.Service) error
+	Type() model.DriverType
 }
-
-// Type is used to describe which deployment target is to be used
-type Type string
-
-const (
-	// TypeIstio is the driver type used to target istio on kubernetes
-	TypeIstio Type = "istio"
-)

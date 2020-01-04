@@ -1,4 +1,4 @@
-package driver
+package istio
 
 import (
 	"fmt"
@@ -17,28 +17,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/spaceuptech/launchpad/model"
+	"github.com/spaceuptech/galaxy/model"
 )
-
-func getServiceUniqueName(project, service, version string) string {
-	return fmt.Sprintf("%s-%s-%s", project, service, version)
-}
-
-func getServiceAccountName(service *model.Service) string {
-	return fmt.Sprintf("%s-%s", service.ProjectID, service.ID)
-}
-
-func getDeploymentName(service *model.Service) string {
-	return fmt.Sprintf("%s-%s", service.ID, service.Version)
-}
-
-func getAuthorizationPolicyName(service *model.Service) string {
-	return fmt.Sprintf("auth-%s-%s", service.ProjectID, service.ID)
-}
-
-func getGatewayName(service *model.Service) string {
-	return fmt.Sprintf("gateway-%s", service.ID)
-}
 
 func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
@@ -92,17 +72,17 @@ func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
 		}
 	}
 	if !isTCP {
-		token, _ := i.auth.SignProxyToken(ksuid.New().String(), service.ProjectID, service.ID, service.Version)
+		token, _ := i.auth.SignProxyToken(ksuid.New().String(), service.ProjectID, service.ID, service.Environment, service.Version)
 		containers = append(containers, v1.Container{
-			Name: "lp-metrics",
+			Name: "galaxy-metrics",
 			Env:  []v1.EnvVar{{Name: "TOKEN", Value: token}},
 
 			// Resource Related
 			Resources: *generateResourceRequirements(&model.Resources{CPU: 20, Memory: 50}),
 
 			// Docker related
-			Image:           "spaceuptech/launchpad:latest",
-			Command:         []string{"./launchpad"},
+			Image:           "spaceuptech/galaxy:latest",
+			Command:         []string{"./galaxy"},
 			Args:            []string{"proxy"},
 			ImagePullPolicy: v1.PullIfNotPresent,
 		})
@@ -131,8 +111,8 @@ func prepareServicePorts(tasks []model.Task) []v1.ServicePort {
 	return ports
 }
 
-func makeOriginalVirtualService(virtualService *v1alpha3.VirtualService) {
-	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", virtualService.Name, virtualService.Namespace)
+func makeOriginalVirtualService(service *model.Service, virtualService *v1alpha3.VirtualService) {
+	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))
 
 	// Redo the http routes. The tcp routes are lost anyways so we don't really care about them.
 	for _, httpRoute := range virtualService.Spec.Http {
@@ -148,23 +128,27 @@ func makeOriginalVirtualService(virtualService *v1alpha3.VirtualService) {
 	}
 }
 
-func makeScaleZeroVirtualService(virtualService *v1alpha3.VirtualService, proxyPort uint32) {
-	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", virtualService.Name, virtualService.Namespace)
+func makeScaleZeroVirtualService(service *model.Service, virtualService *v1alpha3.VirtualService, proxyPort uint32) {
+	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))
 
-	// Redirect traffic to launchpad runner when no of replicas is equal to zero. The launchpad proxy will scale up the service
+	// Redirect traffic to galaxy runner when no of replicas is equal to zero. The galaxy proxy will scale up the service
 	// to service incoming requests.
 	for _, httpRoute := range virtualService.Spec.Http {
 		for _, route := range httpRoute.Route {
-			// Set the destination to launchpad runner proxy
-			route.Destination.Host = "runner.launchpad.svc.cluster.local"
+			// Set the destination to galaxy runner proxy
+			route.Destination.Host = "runner.galaxy.svc.cluster.local"
 			route.Destination.Port.Number = proxyPort
 
 			// Set the headers
 			route.Headers = &networkingv1alpha3.Headers{
 				Request: &networkingv1alpha3.Headers_HeaderOperations{
 					Add: map[string]string{
-						"x-og-host": ogHost,
-						"x-og-port": strings.Split(httpRoute.Name, "-")[2],
+						"x-og-project": service.ProjectID,
+						"x-og-service": service.ID,
+						"x-og-host":    ogHost,
+						"x-og-port":    strings.Split(httpRoute.Name, "-")[2],
+						"x-og-env":     service.Environment,
+						"x-og-version": service.Version,
 					},
 				},
 			}
@@ -183,28 +167,32 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 				// Prepare variables
 				var headers *networkingv1alpha3.Headers
 				retries := &networkingv1alpha3.HTTPRetry{Attempts: 3, PerTryTimeout: &types.Duration{Seconds: 90}}
-				destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
+				destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))
 				destPort := uint32(port.Port)
 
-				// Redirect traffic to launchpad runner when no of replicas is equal to zero. The launchpad proxy will scale up the service
+				// Redirect traffic to galaxy runner when no of replicas is equal to zero. The galaxy proxy will scale up the service
 				// to service incoming requests.
 				if service.Scale.Replicas == 0 {
 					headers = &networkingv1alpha3.Headers{
 						Request: &networkingv1alpha3.Headers_HeaderOperations{
 							Add: map[string]string{
-								"x-og-host": destHost,
-								"x-og-port": strconv.Itoa(int(destPort)),
+								"x-og-project": service.ProjectID,
+								"x-og-service": service.ID,
+								"x-og-host":    destHost,
+								"x-og-port":    strconv.Itoa(int(destPort)),
+								"x-og-env":     service.Environment,
+								"x-og-version": service.Version,
 							},
 						},
 					}
 					retries = &networkingv1alpha3.HTTPRetry{Attempts: 1, PerTryTimeout: &types.Duration{Seconds: 180}}
-					destHost = "runner.launchpad.svc.cluster.local"
+					destHost = "runner.galaxy.svc.cluster.local"
 					destPort = proxyPort
 				}
 
 				httpRoutes = append(httpRoutes, &networkingv1alpha3.HTTPRoute{
 					Name:    fmt.Sprintf("http-%d%d-%d", j, i, port.Port),
-					Match:   []*networkingv1alpha3.HTTPMatchRequest{{Port: uint32(port.Port)}},
+					Match:   []*networkingv1alpha3.HTTPMatchRequest{{Port: uint32(port.Port), Gateways: []string{"mesh"}}},
 					Retries: retries,
 					Route: []*networkingv1alpha3.HTTPRouteDestination{
 						{
@@ -228,7 +216,7 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 					Route: []*networkingv1alpha3.RouteDestination{
 						{
 							Destination: &networkingv1alpha3.Destination{
-								Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID),
+								Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment)),
 								Port: &networkingv1alpha3.PortSelector{Number: uint32(port.Port)},
 							},
 						},
@@ -244,27 +232,33 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 			// Prepare variables
 			var headers *networkingv1alpha3.Headers
 			retries := &networkingv1alpha3.HTTPRetry{Attempts: 3, PerTryTimeout: &types.Duration{Seconds: 90}}
-			destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
+			destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))
 			destPort := uint32(rule.Port)
 
-			// Redirect traffic to launchpad runner when no of replicas is equal to zero. The launchpad proxy will scale up the service
+			// Redirect traffic to galaxy runner when no of replicas is equal to zero. The galaxy proxy will scale up the service
 			// to service incoming requests.
 			if service.Scale.Replicas == 0 {
 				headers = &networkingv1alpha3.Headers{
 					Request: &networkingv1alpha3.Headers_HeaderOperations{
 						Set: map[string]string{
-							"x-og-host": destHost,
-							"x-og-port": strconv.Itoa(int(destPort)),
+							"x-og-project": service.ProjectID,
+							"x-og-service": service.ID,
+							"x-og-host":    destHost,
+							"x-og-port":    strconv.Itoa(int(destPort)),
+							"x-og-env":     service.Environment,
+							"x-og-version": service.Version,
 						},
 					},
 				}
 				retries = &networkingv1alpha3.HTTPRetry{Attempts: 1, PerTryTimeout: &types.Duration{Seconds: 180}}
-				destHost = "runner.launchpad.svc.cluster.local"
+				destHost = "runner.galaxy.svc.cluster.local"
 				destPort = proxyPort
 			}
 
+			match := prepareHTTPMatch(&rule)
+			match[0].Gateways = []string{getGatewayName(service)}
 			httpRoutes = append(httpRoutes, &networkingv1alpha3.HTTPRoute{
-				Match:   prepareHTTPMatch(&rule),
+				Match:   match,
 				Rewrite: prepareHTTPMatchRewrite(&rule),
 				Name:    fmt.Sprintf("expose-%d-%d", i, rule.Port),
 				Retries: retries,
@@ -309,7 +303,7 @@ func prepareHTTPMatchRewrite(rule *model.ExposeRule) *networkingv1alpha3.HTTPRew
 }
 
 func prepareVirtualServiceHosts(service *model.Service) []string {
-	hosts := []string{fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)}
+	hosts := []string{fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))}
 
 	if service.Expose != nil && service.Expose.Hosts != nil {
 		hosts = append(hosts, service.Expose.Hosts...)
@@ -371,8 +365,8 @@ func prepareAuthPolicyRules(service *model.Service) []*securityv1beta1.Rule {
 func prepareUpstreamHosts(service *model.Service) []string {
 	hosts := make([]string, len(service.Upstreams)+1)
 
-	// First entry will always be launchpad
-	hosts[0] = "launchpad/*"
+	// First entry will always be galaxy
+	hosts[0] = "galaxy/*"
 
 	for i, upstream := range service.Upstreams {
 		hosts[i+1] = upstream.ProjectID + "/" + upstream.Service
@@ -391,8 +385,10 @@ func (i *Istio) generateDeployment(service *model.Service) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getDeploymentName(service),
 			Labels: map[string]string{
-				"app":         service.ID,
-				"version":     service.Version,
+				"app":     service.ID,
+				"version": service.Version,
+			},
+			Annotations: map[string]string{
 				"concurrency": strconv.Itoa(int(service.Scale.Concurrency)),
 				"minReplicas": strconv.Itoa(int(service.Scale.MinReplicas)),
 				"maxReplicas": strconv.Itoa(int(service.Scale.MaxReplicas)),
@@ -447,7 +443,7 @@ func generateDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
 	return &v1alpha3.DestinationRule{
 		ObjectMeta: metav1.ObjectMeta{Name: service.ID},
 		Spec: networkingv1alpha3.DestinationRule{
-			Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID),
+			Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment)),
 			TrafficPolicy: &networkingv1alpha3.TrafficPolicy{
 				Tls: &networkingv1alpha3.TLSSettings{Mode: networkingv1alpha3.TLSSettings_ISTIO_MUTUAL},
 			},
@@ -467,7 +463,7 @@ func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
 
 func generateSidecarConfig(service *model.Service) *v1alpha3.Sidecar {
 	return &v1alpha3.Sidecar{
-		ObjectMeta: metav1.ObjectMeta{Name: service.ID, Namespace: service.ProjectID},
+		ObjectMeta: metav1.ObjectMeta{Name: service.ID},
 		Spec: networkingv1alpha3.Sidecar{
 			WorkloadSelector:      &networkingv1alpha3.WorkloadSelector{Labels: map[string]string{"app": service.ID}},
 			Egress:                []*networkingv1alpha3.IstioEgressListener{{Hosts: prepareUpstreamHosts(service)}},

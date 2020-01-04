@@ -20,13 +20,13 @@ func main() {
 	logrus.SetOutput(os.Stdout)
 
 	app := cli.NewApp()
-	app.Name = "launchpad"
+	app.Name = "galaxy"
 	app.Version = "0.1.0"
 
 	app.Commands = []cli.Command{
 		{
 			Name:  "runner",
-			Usage: "Starts a launchpad runner instance",
+			Usage: "Starts a galaxy runner instance",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:   "port",
@@ -82,7 +82,7 @@ func main() {
 				cli.BoolFlag{
 					Name:   "outside-cluster",
 					EnvVar: "OUTSIDE_CLUSTER",
-					Usage:  "Indicates whether launchpad in running inside the cluster",
+					Usage:  "Indicates whether galaxy in running inside the cluster",
 				},
 			},
 			Action: actionRunner,
@@ -93,9 +93,9 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:   "addr",
-					Usage:  "Address of the launchpad runner instance",
+					Usage:  "Address of the galaxy runner instance",
 					EnvVar: "ADDR",
-					Value:  "runner.launchpad.svc.cluster.local:4050",
+					Value:  "runner.galaxy.svc.cluster.local:4050",
 				},
 				cli.StringFlag{
 					Name:   "token",
@@ -113,7 +113,7 @@ func main() {
 		},
 		{
 			Name:  "server",
-			Usage: "Starts the launchpad server instance",
+			Usage: "Starts the galaxy server instance",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:   "port",
@@ -134,6 +134,6 @@ func main() {
 
 	// Start the app
 	if err := app.Run(os.Args); err != nil {
-		logrus.Fatalln("Failed to start launchpad:", err)
+		logrus.Fatalln("Failed to start galaxy:", err)
 	}
 }

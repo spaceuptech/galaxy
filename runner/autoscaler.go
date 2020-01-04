@@ -12,7 +12,7 @@ import (
 	"github.com/segmentio/ksuid"
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/model"
+	"github.com/spaceuptech/galaxy/model"
 )
 
 type counter struct {
@@ -40,16 +40,16 @@ func (runner *Runner) aggregate() {
 		for _, kv := range list.Kv {
 			// Get the project id, service, version and node id
 			array := strings.Split(string(kv.Key), "/")
-			project, service, version, nodeID := array[1], array[2], array[3], array[4]
+			project, service, env, version, nodeID := array[1], array[2], array[3], array[4], array[5]
 
 			// Unmarshal the metrics from badger
 			m := new(metric)
 			_ = json.Unmarshal(kv.Value, m)
 
 			// Add the metric to the 60s aggregator. Add it to the 6s aggregator only if its less that 6s old.
-			a60.add(project, service, version, nodeID, m.Value)
+			a60.add(project, service, env, version, nodeID, m.Value)
 			if m.Ts+6 >= now {
-				a6.add(project, service, version, nodeID, m.Value)
+				a6.add(project, service, env, version, nodeID, m.Value)
 			}
 		}
 		return nil
@@ -64,28 +64,28 @@ func (runner *Runner) aggregate() {
 	// Services that require scale adjusting
 
 	// Iterate over all 60 second aggregations
-	a60.iterate(func(project, service, version string, value int32) {
+	a60.iterate(func(project, service, env, version string, value int32) {
 
 		// Enter panic mode if 6 second average is twice or half the value of 60 second average. In panic mode, we make all decision based on the
 		// count of the 6 second average
-		v6 := a6.get(project, service, version)
+		v6 := a6.get(project, service, env, version)
 		if v6 != 0 && (v6 >= value*2 || v6 <= value/2) {
 			value = v6
 		}
 
 		// Adjust the scale of the service
 		go func() {
-			if err := runner.driver.AdjustScale(&model.Service{ProjectID: project, ID: service, Version: version}, value); err != nil {
+			if err := runner.driver.AdjustScale(&model.Service{ProjectID: project, ID: service, Environment: env, Version: version}, value); err != nil {
 				logrus.Errorf("Could not adjust scale of service (%s:%s): %s", project, service, err.Error())
 			}
 		}()
 
-		a6.delete(project, service, version)
+		a6.delete(project, service, env, version)
 	})
 
-	a6.iterate(func(project, service, version string, value int32) {
+	a6.iterate(func(project, service, env, version string, value int32) {
 		go func() {
-			if err := runner.driver.AdjustScale(&model.Service{ProjectID: project, ID: service, Version: version}, value); err != nil {
+			if err := runner.driver.AdjustScale(&model.Service{ProjectID: project, ID: service, Environment: env, Version: version}, value); err != nil {
 				logrus.Errorf("Could not adjust scale of service (%s:%s): %s", project, service, err.Error())
 			}
 		}()
@@ -121,7 +121,7 @@ func (runner *Runner) flushMetrics(metrics []*model.ProxyMessage) error {
 	return runner.db.Update(func(txn *badger.Txn) error {
 		for _, m := range metrics {
 			// Prepare the key and values
-			key := fmt.Sprintf("metrics/%s/%s/%s/%s/%s", m.Project, m.Service, m.Version, m.NodeID, ksuid.New().String())
+			key := fmt.Sprintf("metrics/%s/%s/%s/%s/%s/%s", m.Project, m.Service, m.Environment, m.Version, m.NodeID, ksuid.New().String())
 			data, _ := json.Marshal(&metric{Ts: time.Now().Unix(), Value: m.ActiveRequests})
 			// Set entry in badger
 			e := badger.NewEntry([]byte(key), data).WithTTL(time.Minute)
