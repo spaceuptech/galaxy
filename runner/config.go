@@ -1,8 +1,8 @@
 package runner
 
 import (
-	"github.com/spaceuptech/launchpad/runner/driver"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/runner/driver"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 // Config is the object required to configure the runner

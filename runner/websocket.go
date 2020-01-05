@@ -6,8 +6,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/utils"
 )
 
 var upgrader = websocket.Upgrader{}

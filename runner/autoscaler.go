@@ -12,7 +12,7 @@ import (
 	"github.com/segmentio/ksuid"
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/model"
+	"github.com/spaceuptech/galaxy/model"
 )
 
 type counter struct {

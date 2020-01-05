@@ -7,14 +7,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Server modules manager the various clusters of launchpad
+// Server modules manager the various clusters of galaxy
 type Server struct {
 	// For internal use
 	router *mux.Router
 	config *Config
 }
 
-// New creates a new launchpad server instance
+// New creates a new galaxy server instance
 func New(config *Config) *Server {
 	return &Server{
 		router: mux.NewRouter(),
@@ -22,12 +22,12 @@ func New(config *Config) *Server {
 	}
 }
 
-// Start begins the launchpad server operations
+// Start begins the galaxy server operations
 func (s *Server) Start() error {
 	// Initialise the routes
 	s.routes()
 
-	// Start the launchpad server
-	logrus.Infof("Starting launchpad server on port %s", s.config.Port)
+	// Start the galaxy server
+	logrus.Infof("Starting galaxy server on port %s", s.config.Port)
 	return http.ListenAndServe(":"+s.config.Port, s.router)
 }

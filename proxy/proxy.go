@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/model"
+	"github.com/spaceuptech/galaxy/model"
 )
 
 // Proxy is the module which collects metrics from envoy and pushes it to the autoscaler
@@ -62,7 +62,7 @@ func (p *Proxy) Start() error {
 
 func (p *Proxy) connect() error {
 	logrus.Debugf("Attempting websocket connection with %s", p.addr)
-	u := url.URL{Scheme: "ws", Host: p.addr, Path: "/v1/launchpad/socket"}
+	u := url.URL{Scheme: "ws", Host: p.addr, Path: "/v1/galaxy/socket"}
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Authorization": []string{"Bearer " + p.token}})
 	if err != nil {
 		return err

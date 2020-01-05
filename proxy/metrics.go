@@ -9,8 +9,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/utils"
 )
 
 func (p *Proxy) collectMetrics() (*model.EnvoyMetrics, error) {

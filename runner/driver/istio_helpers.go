@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/spaceuptech/launchpad/model"
+	"github.com/spaceuptech/galaxy/model"
 )
 
 func getServiceUniqueName(project, service, version string) string {
@@ -101,8 +101,8 @@ func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
 			Resources: *generateResourceRequirements(&model.Resources{CPU: 20, Memory: 50}),
 
 			// Docker related
-			Image:           "spaceuptech/launchpad:latest",
-			Command:         []string{"./launchpad"},
+			Image:           "spaceuptech/galaxy:latest",
+			Command:         []string{"./galaxy"},
 			Args:            []string{"proxy"},
 			ImagePullPolicy: v1.PullIfNotPresent,
 		})
@@ -151,12 +151,12 @@ func makeOriginalVirtualService(virtualService *v1alpha3.VirtualService) {
 func makeScaleZeroVirtualService(virtualService *v1alpha3.VirtualService, proxyPort uint32) {
 	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", virtualService.Name, virtualService.Namespace)
 
-	// Redirect traffic to launchpad runner when no of replicas is equal to zero. The launchpad proxy will scale up the service
+	// Redirect traffic to galaxy runner when no of replicas is equal to zero. The galaxy proxy will scale up the service
 	// to service incoming requests.
 	for _, httpRoute := range virtualService.Spec.Http {
 		for _, route := range httpRoute.Route {
-			// Set the destination to launchpad runner proxy
-			route.Destination.Host = "runner.launchpad.svc.cluster.local"
+			// Set the destination to galaxy runner proxy
+			route.Destination.Host = "runner.galaxy.svc.cluster.local"
 			route.Destination.Port.Number = proxyPort
 
 			// Set the headers
@@ -186,7 +186,7 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 				destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
 				destPort := uint32(port.Port)
 
-				// Redirect traffic to launchpad runner when no of replicas is equal to zero. The launchpad proxy will scale up the service
+				// Redirect traffic to galaxy runner when no of replicas is equal to zero. The galaxy proxy will scale up the service
 				// to service incoming requests.
 				if service.Scale.Replicas == 0 {
 					headers = &networkingv1alpha3.Headers{
@@ -198,7 +198,7 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 						},
 					}
 					retries = &networkingv1alpha3.HTTPRetry{Attempts: 1, PerTryTimeout: &types.Duration{Seconds: 180}}
-					destHost = "runner.launchpad.svc.cluster.local"
+					destHost = "runner.galaxy.svc.cluster.local"
 					destPort = proxyPort
 				}
 
@@ -247,7 +247,7 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 			destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
 			destPort := uint32(rule.Port)
 
-			// Redirect traffic to launchpad runner when no of replicas is equal to zero. The launchpad proxy will scale up the service
+			// Redirect traffic to galaxy runner when no of replicas is equal to zero. The galaxy proxy will scale up the service
 			// to service incoming requests.
 			if service.Scale.Replicas == 0 {
 				headers = &networkingv1alpha3.Headers{
@@ -259,7 +259,7 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 					},
 				}
 				retries = &networkingv1alpha3.HTTPRetry{Attempts: 1, PerTryTimeout: &types.Duration{Seconds: 180}}
-				destHost = "runner.launchpad.svc.cluster.local"
+				destHost = "runner.galaxy.svc.cluster.local"
 				destPort = proxyPort
 			}
 
@@ -371,8 +371,8 @@ func prepareAuthPolicyRules(service *model.Service) []*securityv1beta1.Rule {
 func prepareUpstreamHosts(service *model.Service) []string {
 	hosts := make([]string, len(service.Upstreams)+1)
 
-	// First entry will always be launchpad
-	hosts[0] = "launchpad/*"
+	// First entry will always be galaxy
+	hosts[0] = "galaxy/*"
 
 	for i, upstream := range service.Upstreams {
 		hosts[i+1] = upstream.ProjectID + "/" + upstream.Service

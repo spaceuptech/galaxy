@@ -3,8 +3,8 @@ package driver
 import (
 	"fmt"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 // New creates a new instance of the driver module

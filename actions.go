@@ -1,18 +1,26 @@
 package main
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	"github.com/spaceuptech/launchpad/proxy"
-	"github.com/spaceuptech/launchpad/runner"
-	"github.com/spaceuptech/launchpad/runner/driver"
-	"github.com/spaceuptech/launchpad/server"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/client"
+	"github.com/spaceuptech/galaxy/cmd"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/proxy"
+	"github.com/spaceuptech/galaxy/runner"
+	"github.com/spaceuptech/galaxy/runner/driver"
+	"github.com/spaceuptech/galaxy/server"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 func actionRunner(c *cli.Context) error {
@@ -102,4 +110,67 @@ func setLogLevel(loglevel string) {
 		logrus.Infoln("Defaulting to `info` level")
 		logrus.SetLevel(logrus.InfoLevel)
 	}
+}
+
+func actionStart(c *cli.Context) error {
+	envID := c.String("env")
+	s, err := cmd.CodeStart(envID)
+	if err != nil {
+		return err
+	}
+	if err := runDockerFile(s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func actionLogin(c *cli.Context) error {
+	userName := c.String("username")
+	key := c.String("key")
+	local := c.Bool("local")
+	url := "url1"
+	if local {
+		url = "ur2"
+	}
+	if c.String("url") != "default url" {
+		url = c.String("url")
+	}
+	if err := cmd.LoginStart(userName, key, url, local); err != nil {
+		return err
+	}
+	return nil
+}
+
+func runDockerFile(s *model.Service) error {
+	dir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return err
+	}
+	resp, err := cli.ContainerCreate(ctx,
+		&container.Config{
+			Image: s.Tasks[0].Docker.Image,
+			Env: []string{
+				"FILE_PATH=/",
+				fmt.Sprintf("URL=%s", "http://172.17.0.2:4122"),
+				fmt.Sprintf("FILE_NAME=%s", "abcd")},
+		},
+		&container.HostConfig{Mounts: []mount.Mount{
+			{
+				Type:   mount.TypeBind,
+				Source: dir,
+				Target: "/build",
+			},
+		}}, nil, "")
+	if err != nil {
+		return err
+	}
+	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		return err
+	}
+	return nil
 }

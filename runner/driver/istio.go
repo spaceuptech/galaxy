@@ -16,8 +16,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 // Istio manages the istio on kubernetes deployment target
@@ -248,7 +248,7 @@ func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
 	}
 
 	// Update the virtual service if the new replica count is zero. This is required to redirect incoming http requests to
-	// the launchpad runner proxy. The proxy is responsible to scale the service back up from zero.
+	// the galaxy runner proxy. The proxy is responsible to scale the service back up from zero.
 	if replicaCount == 0 {
 		virtualService, err := i.istio.NetworkingV1alpha3().VirtualServices(service.ProjectID).Get(service.ID, metav1.GetOptions{})
 		if err != nil {
