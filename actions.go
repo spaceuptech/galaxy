@@ -9,11 +9,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	"github.com/spaceuptech/launchpad/proxy"
-	"github.com/spaceuptech/launchpad/runner"
-	"github.com/spaceuptech/launchpad/runner/driver"
-	"github.com/spaceuptech/launchpad/server"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/proxy"
+	"github.com/spaceuptech/galaxy/runner"
+	"github.com/spaceuptech/galaxy/runner/driver"
+	"github.com/spaceuptech/galaxy/server"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 func actionRunner(c *cli.Context) error {
@@ -45,7 +46,7 @@ func actionRunner(c *cli.Context) error {
 			ProxySecret: jwtProxySecret,
 		},
 		Driver: &driver.Config{
-			DriverType:     driver.Type(driverType),
+			DriverType:     model.DriverType(driverType),
 			ConfigFilePath: driverConfig,
 			IsInCluster:    !outsideCluster,
 		},

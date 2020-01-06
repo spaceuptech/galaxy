@@ -6,13 +6,12 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/utils"
 )
 
 func (runner *Runner) handleCreateProject() http.HandlerFunc {
@@ -90,26 +89,36 @@ func (runner *Runner) handleProxy() http.HandlerFunc {
 		// http://golang.org/src/pkg/net/http/client.go
 		r.RequestURI = ""
 
-		// Change the destination with the original host and port
+		// Get the meta data from headers
+		project := r.Header.Get("x-og-project")
+		service := r.Header.Get("x-og-service")
 		ogHost := r.Header.Get("x-og-host")
 		ogPort := r.Header.Get("x-og-port")
+		ogEnv := r.Header.Get("x-og-env")
+		ogVersion := r.Header.Get("x-og-version")
+
+		// Delete the headers
+		r.Header.Del("x-og-project")
+		r.Header.Del("x-og-service")
+		r.Header.Del("x-og-host")
+		r.Header.Del("x-og-port")
+		r.Header.Del("x-og-env")
+		r.Header.Del("x-og-version")
+
+		// Change the destination with the original host and port
 		r.Host = ogHost
 		r.URL.Host = fmt.Sprintf("%s:%s", ogHost, ogPort)
-
-		// Retrieve project id and service
-		array := strings.Split(ogHost, ".")
-		project, service := array[1], array[0]
 
 		// Set the url scheme to http
 		r.URL.Scheme = "http"
 
 		// Add to active request count
 		// TODO: add support for multiple versions
-		runner.chAppend <- &model.ProxyMessage{Service: service, Project: project, Version: "v1", NodeID: "runner-proxy", ActiveRequests: 1}
+		runner.chAppend <- &model.ProxyMessage{Service: service, Project: project, Environment: ogEnv, Version: ogVersion, NodeID: "runner-proxy", ActiveRequests: 1}
 
 		// Wait for the service to scale up
 		if err := runner.debounce.Wait(fmt.Sprintf("proxy-%s-%s", project, service), func() error {
-			return runner.driver.WaitForService(project, service)
+			return runner.driver.WaitForService(&model.Service{ProjectID: project, ID: service, Environment: ogEnv, Version: ogVersion})
 		}); err != nil {
 			utils.SendErrorResponse(w, r, http.StatusServiceUnavailable, err)
 			return

@@ -7,11 +7,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/server/config"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/server/config"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
-// Server modules manager the various clusters of launchpad
+// Server modules manager the various clusters of galaxy
 type Server struct {
 	// For internal use
 	router       *mux.Router
@@ -43,12 +43,12 @@ func New(port, jwtPublicKeyPath, jwtPrivatePath, username, key, jwtSecret string
 	}, nil
 }
 
-// Start begins the launchpad server operations
+// Start begins the galaxy server operations
 func (s *Server) Start() error {
 	// Initialise the routes
 	s.InitRoutes()
 
-	// Start the launchpad server
-	logrus.Infof("Starting launchpad server on port %s", s.config.Port)
+	// Start the galaxy server
+	logrus.Infof("Starting galaxy server on port %s", s.config.Port)
 	return http.ListenAndServe(":"+s.config.Port, s.router)
 }

@@ -8,7 +8,10 @@
 # Test scripts
 scripts/*
 load/*
+
+# Artifacts
 launchpad
+galaxy
 
 # ETCD filed
 default.etcd/*

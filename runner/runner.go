@@ -11,10 +11,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/runner/driver"
-	"github.com/spaceuptech/launchpad/utils"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/runner/driver"
+	"github.com/spaceuptech/galaxy/utils"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 // Runner is the module responsible to manage the runner
@@ -57,7 +57,7 @@ func New(c *Config) (*Runner, error) {
 
 	debounce := utils.NewDebounce()
 
-	opts := badger.DefaultOptions("/tmp/launchpad.db")
+	opts := badger.DefaultOptions("/tmp/galaxy.db")
 	opts.Logger = &logrus.Logger{Out: ioutil.Discard}
 	db, err := badger.Open(opts)
 	if err != nil {

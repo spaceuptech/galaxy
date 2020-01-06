@@ -15,23 +15,23 @@ func newAggregator() *aggregator {
 	return &aggregator{count: map[string]map[string]*counter{}}
 }
 
-func (a *aggregator) makeKey(project, service, version string) string {
-	return fmt.Sprintf("%s:%s:%s", project, service, version)
+func (a *aggregator) makeKey(project, service, env, version string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", project, service, env, version)
 }
 
-func (a *aggregator) splitKey(key string) (project, service, version string) {
+func (a *aggregator) splitKey(key string) (project, service, env, version string) {
 	array := strings.Split(key, ":")
-	return array[0], array[1], array[2]
+	return array[0], array[1], array[2], array[3]
 }
 
-func (a *aggregator) add(project, service, version, nodeID string, value int32) {
+func (a *aggregator) add(project, service, env, version, nodeID string, value int32) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	m, p := a.count[a.makeKey(project, service, version)]
+	m, p := a.count[a.makeKey(project, service, env, version)]
 	if !p {
 		m = map[string]*counter{}
-		a.count[a.makeKey(project, service, version)] = m
+		a.count[a.makeKey(project, service, env, version)] = m
 	}
 
 	c, p := m[nodeID]
@@ -44,7 +44,7 @@ func (a *aggregator) add(project, service, version, nodeID string, value int32) 
 	c.nos++
 }
 
-func (a *aggregator) iterate(cb func(project, service, version string, value int32)) {
+func (a *aggregator) iterate(cb func(project, service, env, version string, value int32)) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -54,16 +54,16 @@ func (a *aggregator) iterate(cb func(project, service, version string, value int
 			value += int32(float32(c.value) / float32(c.nos))
 		}
 
-		project, service, version := a.splitKey(key)
-		cb(project, service, version, value)
+		project, service, env, version := a.splitKey(key)
+		cb(project, service, env, version, value)
 	}
 }
 
-func (a *aggregator) get(project, service, version string) int32 {
+func (a *aggregator) get(project, service, env, version string) int32 {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	nodes, p := a.count[a.makeKey(project, service, version)]
+	nodes, p := a.count[a.makeKey(project, service, env, version)]
 	if !p {
 		return 0
 	}
@@ -76,11 +76,11 @@ func (a *aggregator) get(project, service, version string) int32 {
 	return value
 }
 
-func (a *aggregator) delete(project, service, version string) {
+func (a *aggregator) delete(project, service, env, version string) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	delete(a.count, a.makeKey(project, service, version))
+	delete(a.count, a.makeKey(project, service, env, version))
 }
 
 // func (a *aggregator) len() int {
