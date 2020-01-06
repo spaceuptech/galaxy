@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/opencontainers/runc/Godeps/_workspace/src/github.com/Sirupsen/logrus"
+
 	"github.com/spaceuptech/launchpad/model"
 	"github.com/spaceuptech/launchpad/utils"
 )
@@ -24,7 +26,8 @@ func (m *Manager) UpsertService(ctx context.Context, req *model.Service) error {
 	// store service config as json string in database
 	config, err := json.Marshal(req)
 	if err != nil {
-		return fmt.Errorf("error upserting service unable to marshal - %v", err)
+		logrus.Errorf("error upserting service unable to marshal - %v", err)
+		return err
 	}
 
 	// send http request to space cloud for db operation
@@ -33,7 +36,7 @@ func (m *Manager) UpsertService(ctx context.Context, req *model.Service) error {
 		Method:   http.MethodPost,
 		Url:      getCrudEndpoint(utils.TableServices, utils.OpUpdate),
 		Response: &resp,
-		Params: &CrudRequestBody{
+		Params: &model.CrudRequestPayload{
 			Op: utils.OpUpsert,
 			Update: map[string]interface{}{
 				"$set": &model.TableServices{
@@ -45,28 +48,32 @@ func (m *Manager) UpsertService(ctx context.Context, req *model.Service) error {
 					Version:     req.Version,
 				},
 			},
-			Find: &model.TableServices{ProjectID: req.ProjectID, ServiceID: req.ID},
+			Find: &model.TableServices{ProjectID: req.ProjectID, ServiceID: req.ID, Environment: req.Environment, Version: req.Version},
 		},
 	}
 	if err = utils.HttpRequest(h); err != nil {
-		return fmt.Errorf("error upserting service - %v %v", err, resp["error"])
+		logrus.Errorf("error upserting service - %v error message %v", err, resp["error"])
+		return err
 	}
 	return nil
 }
 
 // DeleteService deletes specified service from services table & calls web hook if deletion is successful
-func (m *Manager) DeleteService(ctx context.Context, projectID, environmentID, serviceID string) error {
+func (m *Manager) DeleteService(ctx context.Context, projectID, environmentID, serviceID, version string) error {
 	// send http request to space cloud for db operation
+	resp := map[string]interface{}{}
 	h := &utils.HttpModel{
-		Method: http.MethodPost,
-		Url:    getCrudEndpoint(utils.TableServices, utils.OpDelete),
-		Params: &CrudRequestBody{
+		Method:   http.MethodPost,
+		Url:      getCrudEndpoint(utils.TableServices, utils.OpDelete),
+		Response: &resp,
+		Params: &model.CrudRequestPayload{
 			Op:   utils.OpOne,
-			Find: &model.TableServices{ProjectID: projectID, Environment: environmentID, ServiceID: serviceID},
+			Find: &model.TableServices{ProjectID: projectID, ServiceID: serviceID, Environment: environmentID, Version: version},
 		},
 	}
 	if err := utils.HttpRequest(h); err != nil {
-		return fmt.Errorf("error deleting service - %v", err)
+		logrus.Errorf("error deleting service - %v %v", err, resp["error"])
+		return err
 	}
 	return nil
 }
@@ -78,7 +85,8 @@ func (m *Manager) ApplyServiceToClusters(ctx context.Context, req *model.Service
 		// get specified cluster info
 		cluster, err := m.GetCluster(clusterID)
 		if err != nil {
-			return fmt.Errorf("error applying service - %v", err)
+			logrus.Errorf("error applying specified service to cluster - %v", err)
+			return err
 		}
 
 		// send http request to space cloud for db operation
@@ -90,7 +98,8 @@ func (m *Manager) ApplyServiceToClusters(ctx context.Context, req *model.Service
 			Response: &resp,
 		}
 		if err = utils.HttpRequest(h); err != nil {
-			return fmt.Errorf("error unable to apply service - %v %v", err, resp["error"])
+			logrus.Errorf("error unable to apply specified service to cluster - %v %v", err, resp["error"])
+			return err
 		}
 	}
 
@@ -102,7 +111,8 @@ func (m *Manager) DeleteServiceFromClusters(ctx context.Context, req *model.Serv
 		// get specified cluster info
 		cluster, err := m.GetCluster(clusterID)
 		if err != nil {
-			return fmt.Errorf("error deleting service from cluster- %v", err)
+			logrus.Errorf("error deleting service from cluster- %v", err)
+			return err
 		}
 
 		// send http request to space cloud for db operation
@@ -114,7 +124,8 @@ func (m *Manager) DeleteServiceFromClusters(ctx context.Context, req *model.Serv
 			Response: &resp,
 		}
 		if err = utils.HttpRequest(h); err != nil {
-			return fmt.Errorf("error unable to delete service from cluster- %v %v", err, resp["error"])
+			logrus.Errorf("error unable to delete service from cluster- %v %v", err, resp["error"])
+			return err
 		}
 	}
 

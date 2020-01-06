@@ -46,8 +46,8 @@ const (
 	Server OperatingMode = "server"
 )
 
-func Init(mode OperatingMode, username, key string) *Config {
-	return &Config{userName: username, key: key, Mode: mode}
+func Init(mode OperatingMode, username, key, jwtSecret string) *Config {
+	return &Config{userName: username, key: key, Secret: jwtSecret, Mode: mode}
 }
 
 // New creates a new instance of the auth module

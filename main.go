@@ -147,6 +147,11 @@ func main() {
 					EnvVar: "JWT_PRIVATE_KEY_PATH",
 					Usage:  "path for private key used for jwt token generation & verification",
 				},
+				cli.StringFlag{
+					Name:   "jwt-secret",
+					EnvVar: "JWT_SECRET",
+					Usage:  "The jwt secret to use when the algorithm is set to HS256",
+				},
 			},
 			Action: actionServer,
 		},

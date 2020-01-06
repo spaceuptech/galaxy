@@ -325,7 +325,7 @@ func (i *Istio) WaitForService(project, service string) error {
 }
 
 // CreateProject creates a new namespace for the client
-func (i *Istio) CreateProject(project *model.Project) error {
+func (i *Istio) CreateProject(project *model.CreateProject) error {
 	ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: project.ID, Labels: map[string]string{"istio-injection": "enabled"}}}
 	_, err := i.kube.CoreV1().Namespaces().Create(ns)
 	return err

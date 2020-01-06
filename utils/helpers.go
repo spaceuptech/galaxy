@@ -7,39 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
-	"github.com/spaceuptech/launchpad/model"
 )
-
-// FireGraphqlQuery is a general function used to send graphql queries to space cloud
-func FireGraphqlQuery(params *model.InsertRequest, responseType int) (interface{}, error) {
-	// TODO: remove graphql endpoint field from billing moudle & make it a constant
-	requestBody := new(bytes.Buffer)
-	if err := json.NewEncoder(requestBody).Encode(params); err != nil {
-		return nil, err
-	}
-
-	resp, err := http.Post(GraphqlEndpoint, ApplicationJson, requestBody)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	switch responseType {
-	case GraphqlMutation:
-		v := model.MutationQueryResponse{}
-		if err := json.NewDecoder(resp.Body).Decode(&v); err != nil {
-			return nil, err
-		}
-
-		if resp.StatusCode != 200 && (v.Data.Insert.Status != 200 || v.Data.Update.Status != 200) {
-			return nil, fmt.Errorf("error while inserting data in database")
-		}
-		return v, nil
-	default:
-		return nil, fmt.Errorf("invalid response type")
-	}
-}
 
 type HttpModel struct {
 	Method   string

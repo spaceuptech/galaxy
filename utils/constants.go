@@ -5,9 +5,6 @@ const (
 	GraphqlEndpoint string = "http://localhost:4122/v1/api/space_galaxy/graphql"
 	ApplicationJson string = "application/json"
 
-	GraphqlQuery = iota
-	GraphqlMutation
-
 	// HTTP
 	SimpleRequest = iota
 

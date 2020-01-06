@@ -28,7 +28,7 @@ type Config struct {
 
 // Driver is the interface of the modules which interact with the deployment targets
 type Driver interface {
-	CreateProject(project *model.Project) error
+	CreateProject(project *model.CreateProject) error
 	ApplyService(service *model.Service) error
 	AdjustScale(service *model.Service, activeReqs int32) error
 	WaitForService(project, service string) error

@@ -97,23 +97,28 @@ func TestHandleUpsertCLiService(t *testing.T) {
 	testCases := []struct {
 		name          string
 		serviceID     string
-		httpBody      *model.ServiceRequest
+		httpBody      *model.FileStoreEventPayload
 		isErrExpected bool
 	}{
 		{
-			name:      "testing cli upsert service",
-			serviceID: "service1",
-			httpBody: &model.ServiceRequest{
-				IsDeploy: true,
-				Service: &model.Service{
-					Clusters:    []string{"india", "usa", "uk"},
-					Environment: "production",
-					ID:          "service1",
-					ProjectID:   "new2",
-					Version:     "0.0.1",
+			name:          "testing cli upsert service",
+			serviceID:     "service1",
+			isErrExpected: false,
+			httpBody: &model.FileStoreEventPayload{
+				Data: &model.FileStoreData{
+					Path: "",
+					Meta: &model.ServiceRequest{
+						IsDeploy: true,
+						Service: &model.Service{
+							Clusters:    []string{"india", "usa", "uk"},
+							Environment: "production",
+							ID:          "service1",
+							ProjectID:   "new2",
+							Version:     "0.0.1",
+						},
+					},
 				},
 			},
-			isErrExpected: false,
 		},
 	}
 

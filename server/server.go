@@ -21,10 +21,10 @@ type Server struct {
 }
 
 // New creates a new launchpad server instance
-func New(port, jwtPublicKeyPath, jwtPrivatePath, username, key string) (*Server, error) {
+func New(port, jwtPublicKeyPath, jwtPrivatePath, username, key, jwtSecret string) (*Server, error) {
 
 	// auth instance
-	a := auth.Init(auth.Server, username, key)
+	a := auth.Init(auth.Server, username, key, jwtSecret)
 	auth, err := auth.New(a, jwtPublicKeyPath, jwtPrivatePath)
 	if err != nil {
 		fmt.Errorf("error creating an instance of auth module - %v", err)

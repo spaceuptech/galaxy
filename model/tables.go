@@ -1,6 +1,6 @@
 package model
 
-// schema of table projects
+// TableProjects is the structure of projects table
 type TableProjects struct {
 	ProjectID    string `json:"project_id,omitempty"`
 	AccountID    string `json:"account_id,omitempty"`
@@ -8,7 +8,7 @@ type TableProjects struct {
 	Environments string `json:"environments,omitempty"`
 }
 
-// schema of table services
+// TableServices is the structure of services table
 type TableServices struct {
 	ID          string `json:"id,omitempty"`
 	Environment string `json:"environment,omitempty"`
@@ -19,7 +19,7 @@ type TableServices struct {
 	Version     string `json:"version,omitempty"`
 }
 
-// schema of table clusters
+// TableClusters is the structure of clusters table
 type TableClusters struct {
 	ClusterID  string `json:"cluster_id,omitempty"`
 	CreatedAt  string `json:"created_at,omitempty"`

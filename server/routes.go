@@ -15,7 +15,7 @@ func (s *Server) InitRoutes() {
 func (s *Server) routes(router *mux.Router) {
 
 	// route for registering a new cluster
-	router.Methods(http.MethodPost).Path("/v1/galaxy/register-cluster").HandlerFunc(handlers.HandleClusterRegistration(s.auth))
+	router.Methods(http.MethodPost).Path("/v1/galaxy/register-cluster").HandlerFunc(handlers.HandleClusterRegistration(s.auth, s.galacyConfig))
 
 	// route for login
 	router.Methods(http.MethodPost).Path("/v1/galaxy/login").HandlerFunc(handlers.HandleLogin(s.auth, s.galacyConfig))
@@ -36,7 +36,7 @@ func (s *Server) routes(router *mux.Router) {
 	// route for service configuration TODO ACTUAL IMPLEMENTATION REMAINING WITH DATABASE make sure it apply is upsert op
 	router.Methods(http.MethodPost).Path("/v1/galaxy/service/{serviceID}/ui").HandlerFunc(handlers.HandleApplyUIService(s.auth, s.galacyConfig))
 	router.Methods(http.MethodPost).Path("/v1/galaxy/service/{serviceID}/cli").HandlerFunc(handlers.HandleApplyCLiService(s.auth, s.galacyConfig))
-	router.Methods(http.MethodDelete).Path("/v1/galaxy/service/{projectID}/{environmentID}/{serviceID}").HandlerFunc(handlers.HandleDeleteService(s.auth, s.galacyConfig))
+	router.Methods(http.MethodDelete).Path("/v1/galaxy/service/{projectID}/{environmentID}/{serviceID}/{version}").HandlerFunc(handlers.HandleDeleteService(s.auth, s.galacyConfig))
 	// web hook for applying service
 	router.Methods(http.MethodPost).Path("/v1/galaxy/service/apply").HandlerFunc(handlers.HandleClusterApplyService(s.auth, s.galacyConfig))
 	router.Methods(http.MethodPost).Path("/v1/galaxy/service/delete").HandlerFunc(handlers.HandleClusterDeleteService(s.auth, s.galacyConfig))

@@ -85,6 +85,7 @@ func actionServer(c *cli.Context) error {
 	authKey := c.String("auth-key")
 	jwtPublicKeyPath := c.String("jwt-public-key-path")
 	jwtPrivatePath := c.String("jwt-private-key-path")
+	jwtSecret := c.String("jwt-secret")
 
 	if authUsername == "" {
 		log.Fatalf("username not provided")
@@ -102,12 +103,16 @@ func actionServer(c *cli.Context) error {
 		log.Fatalf("private key path not provided")
 	}
 
+	if jwtSecret == "" {
+		log.Fatalf("jwt secret key not provide")
+	}
+
 	// TODO LOAD CONFIG FROM FILE
 
 	// Set the log level
 	setLogLevel(loglevel)
 
-	s, err := server.New(port, jwtPublicKeyPath, jwtPrivatePath, authUsername, authKey)
+	s, err := server.New(port, jwtPublicKeyPath, jwtPrivatePath, authUsername, authKey, jwtSecret)
 	if err != nil {
 		return err
 	}

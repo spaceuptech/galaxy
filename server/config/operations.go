@@ -42,12 +42,16 @@ func (m *Module) DeleteProjectCluster(ctx context.Context, accountID string, pro
 	return m.block.DeleteProjectCluster(ctx, accountID, projectID, environmentID, clusterID)
 }
 
+func (m *Module) UpdateCluster(ctx context.Context, request *model.RegisterClusterPayload, status string) error {
+	return m.block.UpdateCluster(ctx, request, status)
+}
+
 func (m *Module) UpsertService(ctx context.Context, req *model.Service) error {
 	return m.block.UpsertService(ctx, req)
 }
 
-func (m *Module) DeleteService(ctx context.Context, projectID, environmentID, serviceID string) error {
-	return m.block.DeleteService(ctx, projectID, environmentID, serviceID)
+func (m *Module) DeleteService(ctx context.Context, projectID, environmentID, serviceID, version string) error {
+	return m.block.DeleteService(ctx, projectID, environmentID, serviceID, version)
 }
 
 func (m *Module) ApplyServiceToCluster(ctx context.Context, req *model.Service) error {

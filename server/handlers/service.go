@@ -52,7 +52,7 @@ func HandleApplyCLiService(auth *auth.Module, galaxyConfig *config.Module) http.
 			return
 		}
 
-		req := new(model.FileStoreEventMessage)
+		req := new(model.FileStoreEventPayload)
 		json.NewDecoder(r.Body).Decode(req)
 
 		if req.Data.Meta.IsDeploy {
@@ -81,7 +81,7 @@ func HandleDeleteService(auth *auth.Module, galaxyConfig *config.Module) http.Ha
 
 		vars := mux.Vars(r)
 
-		if err := galaxyConfig.DeleteService(ctx, vars["projectID"], vars["environmentID"], vars["serviceID"]); err != nil {
+		if err := galaxyConfig.DeleteService(ctx, vars["projectID"], vars["environmentID"], vars["serviceID"], vars["version"]); err != nil {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 		}
 
@@ -102,7 +102,7 @@ func HandleClusterApplyService(auth *auth.Module, galaxyConfig *config.Module) h
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 		}
 
-		req := new(model.DatabaseEventMessage)
+		req := new(model.DatabaseEventPayload)
 		json.NewDecoder(r.Body).Decode(req)
 
 		if err := galaxyConfig.ApplyServiceToCluster(ctx, req.Data.Doc); err != nil {
@@ -125,7 +125,7 @@ func HandleClusterDeleteService(auth *auth.Module, galaxyConfig *config.Module) 
 		}
 
 		// token verification
-		req := new(model.DatabaseEventMessage)
+		req := new(model.DatabaseEventPayload)
 		json.NewDecoder(r.Body).Decode(req)
 
 		if err := galaxyConfig.ApplyServiceToCluster(ctx, req.Data.Doc); err != nil {

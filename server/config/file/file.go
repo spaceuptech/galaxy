@@ -9,8 +9,7 @@ type Manager struct {
 	accountID string
 }
 
-// TODO READ CONFIG DURING INIT
-
+// Init initializes file module
 func Init(username string) (*Manager, error) {
 	return &Manager{accountID: username}, nil
 }

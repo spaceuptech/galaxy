@@ -18,12 +18,12 @@ func TestHandleClusterRegistration(t *testing.T) {
 	}
 	tests := []struct {
 		name          string
-		httpBody      model.RegisterClusterRequest
+		httpBody      model.RegisterClusterPayload
 		isErrExpected bool
 	}{
 		{
 			name: "Register cluster test",
-			httpBody: model.RegisterClusterRequest{
+			httpBody: model.RegisterClusterPayload{
 				ClusterID:  "cluster1",
 				RunnerType: "runner1",
 				Url:        "dummyUrl",

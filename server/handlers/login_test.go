@@ -45,7 +45,7 @@ func TestHandleLogin(t *testing.T) {
 			h.Response = &resp
 			gotErr := utils.HttpRequest(h)
 			if (gotErr != nil) != testCase.isErrExpected {
-				t.Errorf("Error login got, %v wanted, %v", gotErr, testCase.isErrExpected)
+				t.Errorf("Error login got, %v %v wanted, %v", gotErr, resp["error"], testCase.isErrExpected)
 			}
 
 			if !testCase.isErrExpected {

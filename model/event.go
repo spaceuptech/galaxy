@@ -1,21 +1,23 @@
 package model
 
-// DatabaseEventMessage is the event payload for create, update and delete events
-type DatabaseEventMessage struct {
+// DatabaseEventPayload is the payload received from database events
+type DatabaseEventPayload struct {
 	Data struct {
 		Doc *Service `json:"doc"`
 	} `json:"data"`
 }
 
-type ServiceRequest struct {
-	IsDeploy bool     `json:"is_deploy"`
-	Service  *Service `json:"service"`
+// FileStoreEventPayload is the payload received from file store events
+type FileStoreEventPayload struct {
+	Data *FileStoreData `json:"data"`
 }
 
-// DatabaseEventMessage is the event payload for create, update and delete events
-type FileStoreEventMessage struct {
-	Data struct {
-		Path string         `json:"path"`
-		Meta ServiceRequest `json:"meta"`
-	} `json:"data"`
+type FileStoreData struct {
+	Path string          `json:"path"`
+	Meta *ServiceRequest `json:"meta"`
+}
+
+type ServiceRequest struct {
+	IsDeploy bool     `json:"isDeploy"`
+	Service  *Service `json:"service"`
 }

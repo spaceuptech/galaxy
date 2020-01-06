@@ -27,9 +27,10 @@ type Config interface {
 
 	AddProjectCluster(ctx context.Context, accountID, projectID, environmentID string, req *model.Cluster) error
 	DeleteProjectCluster(ctx context.Context, accountID, projectID, environmentID, clusterID string) error
+	UpdateCluster(ctx context.Context, request *model.RegisterClusterPayload, status string) error
 
 	UpsertService(ctx context.Context, req *model.Service) error
-	DeleteService(ctx context.Context, projectID, environmentID, serviceID string) error
+	DeleteService(ctx context.Context, projectID, environmentID, serviceID, version string) error
 	ApplyServiceToClusters(ctx context.Context, req *model.Service) error
 	DeleteServiceFromClusters(ctx context.Context, req *model.Service) error
 }

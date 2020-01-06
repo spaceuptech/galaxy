@@ -21,7 +21,7 @@ func HandleLogin(auth *auth.Module, galaxyConfig *config.Module) http.HandlerFun
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		v := new(model.CliLoginRequest)
+		v := new(model.LoginPayload)
 		json.NewDecoder(r.Body).Decode(v)
 
 		if !auth.VerifyCliLogin(v.Username, v.Key) {
@@ -42,8 +42,14 @@ func HandleLogin(auth *auth.Module, galaxyConfig *config.Module) http.HandlerFun
 			return
 		}
 
+		scToken, err := auth.GenerateHS256Token()
+		if err != nil {
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": projects})
+		json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": projects, "fileToken": scToken})
 		return
 	}
 }
