@@ -3,7 +3,6 @@ WORKDIR /build
 COPY . .
 RUN apk --no-cache add build-base
 RUN GOOS=linux go build -a -ldflags '-s -w -extldflags "-static"' -o galaxy .
-
 FROM alpine:3.10
 RUN apk --no-cache add ca-certificates
 WORKDIR /galaxy

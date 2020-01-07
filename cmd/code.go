@@ -1,9 +1,17 @@
 package cmd
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/client"
 	"github.com/spaceuptech/galaxy/model"
 )
 
@@ -103,7 +111,7 @@ func generateServiceConfig(projects []model.Projects, selectedaccount *model.Acc
 				Ports:     []model.Port{model.Port{Protocol: "http", Port: port}},
 				Resources: model.Resources{CPU: 250, Memory: 512},
 				Docker:    model.Docker{Image: img},
-				Env:       map[string]string{"URL": selectedaccount.ServerUrl, "Cmd": progCmd},
+				Env:       map[string]string{"URL": selectedaccount.ServerUrl, "CMD": progCmd},
 			},
 		},
 		Whitelist: []string{"project:*"},
@@ -111,4 +119,44 @@ func generateServiceConfig(projects []model.Projects, selectedaccount *model.Acc
 		Runtime:   "code",
 	}
 	return c, nil
+}
+
+//RunDockerFile starts a container using go docker client
+func RunDockerFile(s *model.ActionCode, loginResp *model.LoginResponse) error {
+	dir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	sa, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return err
+	}
+	resp, err := cli.ContainerCreate(ctx,
+		&container.Config{
+			Image: s.Service.Tasks[0].Docker.Image,
+			Env: []string{
+				"FILE_PATH=/",
+				fmt.Sprintf("URL=%s", s.Service.Tasks[0].Env["URL"]),
+				fmt.Sprintf("TOKEN=%s", loginResp.FileToken),
+				fmt.Sprintf("meta=%s", string(sa))},
+		},
+		&container.HostConfig{Mounts: []mount.Mount{
+			{
+				Type:   mount.TypeBind,
+				Source: dir,
+				Target: "/build",
+			},
+		}}, nil, "")
+	if err != nil {
+		return err
+	}
+	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		return err
+	}
+	return nil
 }

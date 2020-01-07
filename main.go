@@ -166,25 +166,25 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:   "username",
-					Usage:  "",
+					Usage:  "Accepts the username for login",
 					EnvVar: "USERNAME",
 					Value:  "None",
 				},
 				cli.StringFlag{
 					Name:   "key",
-					Usage:  "",
+					Usage:  "Accepts the access key to be verified during login",
 					EnvVar: "KEY",
 					Value:  "None",
 				},
 				cli.StringFlag{
 					Name:   "url",
-					Usage:  "",
+					Usage:  "Accepts the URL of server",
 					EnvVar: "URL",
 					Value:  "noorain.bolega.com",
 				},
 				cli.BoolFlag{
 					Name:   "local",
-					Usage:  "",
+					Usage:  "Determines whether local URL is to be used as server URL",
 					EnvVar: "LOCAL",
 				},
 			},

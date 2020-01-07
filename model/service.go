@@ -126,3 +126,8 @@ type ExposeRuleURI struct {
 	Exact   *string `json:"exact" yaml:"exact"`
 	Rewrite *string `json:"rewrite" yaml:"rewrite"`
 }
+
+type ActionCode struct {
+	Service  *Service `json:"service" yaml:"service"`
+	IsDeploy bool     `json:"isdeploy" yaml:"isdeploy"`
+}
