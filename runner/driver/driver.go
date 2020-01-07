@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/spaceuptech/galaxy/model"
-	"github.com/spaceuptech/galaxy/runner/driver/istio"
 	"github.com/spaceuptech/galaxy/utils/auth"
 )
 

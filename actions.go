@@ -1,13 +1,21 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/client"
+	"github.com/spaceuptech/galaxy/cmd"
 	"github.com/spaceuptech/galaxy/model"
 	"github.com/spaceuptech/galaxy/proxy"
 	"github.com/spaceuptech/galaxy/runner"
@@ -103,4 +111,97 @@ func setLogLevel(loglevel string) {
 		logrus.Infoln("Defaulting to `info` level")
 		logrus.SetLevel(logrus.InfoLevel)
 	}
+}
+
+type actionCode struct {
+	service  *model.Service
+	isDeploy bool
+}
+
+func actionStartCode(c *cli.Context) error {
+	envID := c.String("env")
+	service, loginResp, err := cmd.CodeStart(envID)
+	if err != nil {
+		return err
+	}
+	actionCodeStruct := actionCode{
+		service:  service,
+		isDeploy: false,
+	}
+	if err := runDockerFile(actionCodeStruct, loginResp); err != nil {
+		return err
+	}
+	return nil
+}
+
+func actionBuildCode(c *cli.Context) error {
+	envID := c.String("env")
+	service, loginResp, err := cmd.CodeStart(envID)
+	if err != nil {
+		return err
+	}
+	actionCodeStruct := actionCode{
+		service:  service,
+		isDeploy: true,
+	}
+	if err := runDockerFile(actionCodeStruct, loginResp); err != nil {
+		return err
+	}
+	return nil
+}
+
+func actionLogin(c *cli.Context) error {
+	userName := c.String("username")
+	key := c.String("key")
+	local := c.Bool("local")
+	url := "url1"
+	if local {
+		url = "ur2"
+	}
+	if c.String("url") != "default url" {
+		url = c.String("url")
+	}
+	if err := cmd.LoginStart(userName, key, url, local); err != nil {
+		return err
+	}
+	return nil
+}
+
+func runDockerFile(s actionCode, loginResp *model.LoginResponse) error {
+	dir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	sa, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return err
+	}
+	resp, err := cli.ContainerCreate(ctx,
+		&container.Config{
+			Image: s.service.Tasks[0].Docker.Image,
+			Env: []string{
+				"FILE_PATH=/",
+				fmt.Sprintf("URL=%s", s.service.Tasks[0].Env["URL"]),
+				fmt.Sprintf("TOKEN=%s", loginResp.FileToken),
+				fmt.Sprintf("meta=%s", string(sa))},
+		},
+		&container.HostConfig{Mounts: []mount.Mount{
+			{
+				Type:   mount.TypeBind,
+				Source: dir,
+				Target: "/build",
+			},
+		}}, nil, "")
+	if err != nil {
+		return err
+	}
+	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		return err
+	}
+	return nil
 }
