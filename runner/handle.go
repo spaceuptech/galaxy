@@ -28,7 +28,7 @@ func (runner *Runner) handleCreateProject() http.HandlerFunc {
 		}
 
 		// Parse request body
-		project := new(model.CreateProject)
+		project := new(model.CreateClusterProjectPayload)
 		if err := json.NewDecoder(r.Body).Decode(project); err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)

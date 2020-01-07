@@ -326,10 +326,27 @@ func (i *Istio) WaitForService(service *model.Service) error {
 }
 
 // CreateProject creates a new namespace for the client
-func (i *Istio) CreateProject(project *model.CreateProject) error {
-	ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: project.ID, Labels: map[string]string{"istio-injection": "enabled"}}}
-	_, err := i.kube.CoreV1().Namespaces().Create(ns)
-	return err
+func (i *Istio) CreateProject(project *model.CreateClusterProjectPayload) error {
+	for _, environment := range project.Environments {
+		ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: project.ProjectID, Namespace: getNamespaceName(project.ProjectID, environment.ID), Labels: map[string]string{"istio-injection": "enabled"}}}
+		_, err := i.kube.CoreV1().Namespaces().Create(ns)
+		// TODO WHAT IF 5 ENVS EXIST OUT OF WHICH 3 WHERE CREATED SUCCESSFULLY BUT 4TH THREW AN ERROR WHAT HAPPENS TO THE 3 WHICH WHERE CREATE SUCCESSFULLY
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// CreateProject creates a new namespace for the client
+func (i *Istio) DeleteProject(project *model.CreateClusterProjectPayload) error {
+	// TODO SAME DOUBT HERE
+	for _, environment := range project.Environments {
+		if err := i.kube.CoreV1().Namespaces().Delete(getNamespaceName(project.ProjectID, environment.ID), &metav1.DeleteOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Type returns the type of the driver

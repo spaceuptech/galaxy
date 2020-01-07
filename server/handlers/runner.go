@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/spaceuptech/launchpad/utils"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/utils"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 // HandleProvidePublicKey sends public key to runner
@@ -19,6 +19,6 @@ func HandleProvidePublicKey(auth *auth.Module) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"key": auth.GetPublicKey()})
+		json.NewEncoder(w).Encode(map[string]interface{}{"pem": auth.GetPublicKey()})
 	}
 }

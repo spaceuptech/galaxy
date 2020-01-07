@@ -9,8 +9,8 @@ import (
 
 	"github.com/opencontainers/runc/Godeps/_workspace/src/github.com/Sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/utils"
 )
 
 // TODO SHOULD I CHECK IF PROJECT EXISTS OR GRACEFULLY HANDLE IT WHILE PROJECT CREATION OR UPDATION
@@ -93,7 +93,7 @@ func (m *Manager) ApplyServiceToClusters(ctx context.Context, req *model.Service
 		resp := map[string]interface{}{}
 		h := &utils.HttpModel{
 			Method:   http.MethodPost,
-			Url:      fmt.Sprintf("%s/v1/launchpad/service", cluster.Url),
+			Url:      fmt.Sprintf("%s/v1/galaxy/service", cluster.Url),
 			Params:   req,
 			Response: &resp,
 		}
@@ -106,6 +106,7 @@ func (m *Manager) ApplyServiceToClusters(ctx context.Context, req *model.Service
 	return nil
 }
 
+// DeleteServiceFromClusters deletes specified service from clusters present service config
 func (m *Manager) DeleteServiceFromClusters(ctx context.Context, req *model.Service) error {
 	for _, clusterID := range req.Clusters {
 		// get specified cluster info
@@ -119,7 +120,7 @@ func (m *Manager) DeleteServiceFromClusters(ctx context.Context, req *model.Serv
 		resp := map[string]interface{}{}
 		h := &utils.HttpModel{
 			Method:   http.MethodDelete,
-			Url:      fmt.Sprintf("%s/v1/launchpad/service", cluster.Url),
+			Url:      fmt.Sprintf("%s/v1/galaxy/service", cluster.Url),
 			Params:   req,
 			Response: &resp,
 		}

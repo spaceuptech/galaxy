@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -37,7 +38,7 @@ func (m *Module) setPublicKey(pemData string) error {
 
 	// Set the public key
 	m.config.publicKey = key
-	logrus.Infoln("Public key of launchpad server set successfully")
+	logrus.Infoln("Public key of galaxy server set successfully")
 	return nil
 }
 
@@ -54,7 +55,7 @@ func (m *Module) fetchPublicKey() (success bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://api.spaceuptech.com/v1/galaxy/galaxy/public-key", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://localhost:4050/v1/galaxy/public-key", nil)
 	if err != nil {
 		logrus.Errorf("Could not fetch galaxy public key - %s", err.Error())
 		return false
@@ -67,6 +68,7 @@ func (m *Module) fetchPublicKey() (success bool) {
 	}
 
 	publicKey := new(model.PublicKeyPayload)
+	log.Println("body", res.Body)
 	if err := json.NewDecoder(res.Body).Decode(publicKey); err != nil {
 		logrus.Errorf("Could not decode galaxy public key payload - %s", err.Error())
 		return false

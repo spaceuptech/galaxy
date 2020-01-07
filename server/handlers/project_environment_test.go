@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/utils"
 )
 
 func TestHandleAddEnvironment(t *testing.T) {

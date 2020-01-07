@@ -21,9 +21,10 @@ type Module struct {
 // Config is the object used to configure the auth module
 type Config struct {
 	// JWT related stuff
-	publicKey  *rsa.PublicKey  // for RSA
-	privateKey *rsa.PrivateKey // for RSA
-	Secret     string          // for HSA
+	publicKey       *rsa.PublicKey  // for RSA
+	privateKey      *rsa.PrivateKey // for RSA
+	base64PublicKey string
+	Secret          string // for HSA
 
 	// User authentication
 	userName string
@@ -79,7 +80,6 @@ func New(config *Config, jwtPublicKeyPath, jwtPrivatePath string) (*Module, erro
 		verifyBytes, err := ioutil.ReadFile(jwtPublicKeyPath)
 		if err != nil {
 			fmt.Errorf("error reading public key from path")
-
 		}
 
 		publicKey, err := jwt.ParseRSAPublicKeyFromPEM(verifyBytes)
@@ -87,6 +87,7 @@ func New(config *Config, jwtPublicKeyPath, jwtPrivatePath string) (*Module, erro
 			fmt.Errorf("error parsing public key")
 		}
 
+		m.config.base64PublicKey = string(verifyBytes)
 		m.config.privateKey = privateKey
 		m.config.publicKey = publicKey
 	}

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/spaceuptech/launchpad/utils"
+	"github.com/spaceuptech/galaxy/utils"
 )
 
 func TestHandleLogin(t *testing.T) {

@@ -1,8 +1,6 @@
 package auth
 
 import (
-	"crypto/rsa"
-
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -10,8 +8,8 @@ func (m *Module) GetUserName() string {
 	return m.config.userName
 }
 
-func (m *Module) GetPublicKey() *rsa.PublicKey {
-	return m.config.publicKey
+func (m *Module) GetPublicKey() string {
+	return m.config.base64PublicKey
 }
 
 func (m *Module) GenerateHS256Token() (string, error) {

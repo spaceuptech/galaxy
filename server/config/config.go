@@ -3,9 +3,9 @@ package config
 import (
 	"context"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/server/config/file"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/server/config/file"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 type Module struct {

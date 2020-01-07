@@ -3,7 +3,7 @@ package config
 import (
 	"context"
 
-	"github.com/spaceuptech/launchpad/model"
+	"github.com/spaceuptech/galaxy/model"
 )
 
 func (m *Module) AddProject(ctx context.Context, accountID string, req *model.CreateProject) error {
@@ -56,4 +56,8 @@ func (m *Module) DeleteService(ctx context.Context, projectID, environmentID, se
 
 func (m *Module) ApplyServiceToCluster(ctx context.Context, req *model.Service) error {
 	return m.block.ApplyServiceToClusters(ctx, req)
+}
+
+func (m *Module) DeleteServiceFromClusters(ctx context.Context, req *model.Service) error {
+	return m.block.DeleteServiceFromClusters(ctx, req)
 }

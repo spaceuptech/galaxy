@@ -8,10 +8,10 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/server/config"
-	"github.com/spaceuptech/launchpad/utils"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/server/config"
+	"github.com/spaceuptech/galaxy/utils"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 // TODO COMMENT REMAINING
@@ -113,6 +113,7 @@ func HandleClusterApplyService(auth *auth.Module, galaxyConfig *config.Module) h
 	}
 }
 
+// todo implementation
 func HandleClusterDeleteService(auth *auth.Module, galaxyConfig *config.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -128,7 +129,7 @@ func HandleClusterDeleteService(auth *auth.Module, galaxyConfig *config.Module) 
 		req := new(model.DatabaseEventPayload)
 		json.NewDecoder(r.Body).Decode(req)
 
-		if err := galaxyConfig.ApplyServiceToCluster(ctx, req.Data.Doc); err != nil {
+		if err := galaxyConfig.DeleteServiceFromClusters(ctx, req.Data.Doc); err != nil {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 		}
 

@@ -6,9 +6,9 @@ require (
 	github.com/dgraph-io/badger v1.6.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gogo/protobuf v1.3.0
+	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.1
-	github.com/hashicorp/vault v1.3.1
 	github.com/opencontainers/runc v0.1.1
 	github.com/rs/cors v1.7.0
 	github.com/segmentio/ksuid v1.0.2

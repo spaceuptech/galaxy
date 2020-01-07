@@ -20,7 +20,7 @@ type Server struct {
 	galacyConfig *config.Module
 }
 
-// New creates a new launchpad server instance
+// New creates a new galaxy server instance
 func New(port, jwtPublicKeyPath, jwtPrivatePath, username, key, jwtSecret string) (*Server, error) {
 
 	// auth instance

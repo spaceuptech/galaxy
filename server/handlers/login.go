@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/server/config"
-	"github.com/spaceuptech/launchpad/utils"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/server/config"
+	"github.com/spaceuptech/galaxy/utils"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 // TODO HMAC TOKEN

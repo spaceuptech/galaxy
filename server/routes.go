@@ -5,7 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/spaceuptech/launchpad/server/handlers"
+	"github.com/spaceuptech/galaxy/server/handlers"
 )
 
 func (s *Server) InitRoutes() {
@@ -42,5 +42,5 @@ func (s *Server) routes(router *mux.Router) {
 	router.Methods(http.MethodPost).Path("/v1/galaxy/service/delete").HandlerFunc(handlers.HandleClusterDeleteService(s.auth, s.galacyConfig))
 
 	// route for providing public key to runner / cluster
-	router.Methods(http.MethodGet).Path("/v1/galaxy/runner/key").HandlerFunc(handlers.HandleProvidePublicKey(s.auth))
+	router.Methods(http.MethodGet).Path("/v1/galaxy/public-key").HandlerFunc(handlers.HandleProvidePublicKey(s.auth))
 }

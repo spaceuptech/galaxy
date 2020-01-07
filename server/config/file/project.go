@@ -7,8 +7,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/utils"
 )
 
 // AddProject is used to add specified project in projects table if it doesn't exist
@@ -108,7 +108,7 @@ func (m *Manager) CreateProjectInClusters(ctx context.Context, req *model.Create
 		resp := map[string]interface{}{}
 		h := &utils.HttpModel{
 			Method: http.MethodPost,
-			Url:    fmt.Sprintf("%s/v1/launchpad/project", cluster.Url),
+			Url:    fmt.Sprintf("%s/v1/galaxy/project", cluster.Url),
 			Params: &model.CreateClusterProjectPayload{
 				ProjectID:    req.ID,
 				Environments: environments,
@@ -137,7 +137,7 @@ func (m *Manager) DeleteProjectFromClusters(ctx context.Context, req *model.Crea
 		resp := map[string]interface{}{}
 		h := &utils.HttpModel{
 			Method: http.MethodDelete,
-			Url:    fmt.Sprintf("%s/v1/launchpad/project", cluster.Url),
+			Url:    fmt.Sprintf("%s/v1/galaxy/project", cluster.Url),
 			Params: &model.CreateClusterProjectPayload{
 				ProjectID:    req.ID,
 				Environments: environments,
@@ -150,19 +150,4 @@ func (m *Manager) DeleteProjectFromClusters(ctx context.Context, req *model.Crea
 		}
 	}
 	return nil
-}
-
-// createStructure generates a data structure which helps creating/deleting service info in/from all the cluster present in service config
-func createStructure(req *model.CreateProject) map[string][]model.Environment {
-	clusters := map[string][]model.Environment{}
-	for _, environment := range req.Environments {
-		for _, cluster := range environment.Clusters {
-			arrValue, ok := clusters[cluster.ID]
-			if ok {
-				clusters[cluster.ID] = append(arrValue, *environment)
-			}
-			clusters[cluster.ID] = []model.Environment{*environment}
-		}
-	}
-	return clusters
 }

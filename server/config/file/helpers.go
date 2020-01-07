@@ -7,8 +7,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/utils"
 )
 
 // getCrudEndpoint is used to get CRUD endpoint of space cloud
@@ -73,12 +73,29 @@ func (m *Manager) updateProject(accountID string, req *model.TableProjects) erro
 	return nil
 }
 
+// removeEnvironmentAtIndex removes environment at specified index of project config
 func removeEnvironmentAtIndex(s []*model.Environment, i int) []*model.Environment {
 	s[i] = s[len(s)-1]
 	return s[:len(s)-1]
 }
 
+// removeClusterAtIndex removes cluster at specified index of project config
 func removeClusterAtIndex(s []*model.Cluster, i int) []*model.Cluster {
 	s[i] = s[len(s)-1]
 	return s[:len(s)-1]
+}
+
+// createStructure generates a data structure which helps creating/deleting service info in/from all the cluster present in service config
+func createStructure(req *model.CreateProject) map[string][]model.Environment {
+	clusters := map[string][]model.Environment{}
+	for _, environment := range req.Environments {
+		for _, cluster := range environment.Clusters {
+			arrValue, ok := clusters[cluster.ID]
+			if ok {
+				clusters[cluster.ID] = append(arrValue, *environment)
+			}
+			clusters[cluster.ID] = []model.Environment{*environment}
+		}
+	}
+	return clusters
 }
