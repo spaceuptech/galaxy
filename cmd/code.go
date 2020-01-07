@@ -8,27 +8,27 @@ import (
 )
 
 //CodeStart starts the code commands
-func CodeStart(envID string) (*model.Service, error) {
+func CodeStart(envID string) (*model.Service, *model.LoginResponse, error) {
 	credential, err := getCreds()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	selectedAccount := getSelectedAccount(credential)
 
 	loginRes, err := login(selectedAccount)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	c, err := getServiceConfig(".galaxy.yaml")
 	if err != nil {
 		c, err = generateServiceConfig(loginRes.Projects, selectedAccount, envID)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
-	return c, nil
+	return c, loginRes, nil
 }
 
 func generateServiceConfig(projects []model.Projects, selectedaccount *model.Account, envID string) (*model.Service, error) {
@@ -84,7 +84,6 @@ func generateServiceConfig(projects []model.Projects, selectedaccount *model.Acc
 		Default: strings.Join(getCmd(progLang), " ")}, &progCmd); err != nil {
 		return nil, err
 	}
-	progCmds := strings.Split(progCmd, " ")
 	img, err := getImage(progLang)
 	if err != nil {
 		return nil, err
@@ -103,8 +102,8 @@ func generateServiceConfig(projects []model.Projects, selectedaccount *model.Acc
 				Name:      serviceName,
 				Ports:     []model.Port{model.Port{Protocol: "http", Port: port}},
 				Resources: model.Resources{CPU: 250, Memory: 512},
-				Docker:    model.Docker{Image: img, Cmd: progCmds},
-				Env:       map[string]string{"URL": selectedaccount.ServerUrl},
+				Docker:    model.Docker{Image: img},
+				Env:       map[string]string{"URL": selectedaccount.ServerUrl, "Cmd": progCmd},
 			},
 		},
 		Whitelist: []string{"project:*"},

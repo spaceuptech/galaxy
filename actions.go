@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -112,13 +113,38 @@ func setLogLevel(loglevel string) {
 	}
 }
 
-func actionStart(c *cli.Context) error {
+type actionCode struct {
+	service  *model.Service
+	isDeploy bool
+}
+
+func actionStartCode(c *cli.Context) error {
 	envID := c.String("env")
-	s, err := cmd.CodeStart(envID)
+	service, loginResp, err := cmd.CodeStart(envID)
 	if err != nil {
 		return err
 	}
-	if err := runDockerFile(s); err != nil {
+	actionCodeStruct := actionCode{
+		service:  service,
+		isDeploy: false,
+	}
+	if err := runDockerFile(actionCodeStruct, loginResp); err != nil {
+		return err
+	}
+	return nil
+}
+
+func actionBuildCode(c *cli.Context) error {
+	envID := c.String("env")
+	service, loginResp, err := cmd.CodeStart(envID)
+	if err != nil {
+		return err
+	}
+	actionCodeStruct := actionCode{
+		service:  service,
+		isDeploy: true,
+	}
+	if err := runDockerFile(actionCodeStruct, loginResp); err != nil {
 		return err
 	}
 	return nil
@@ -141,8 +167,12 @@ func actionLogin(c *cli.Context) error {
 	return nil
 }
 
-func runDockerFile(s *model.Service) error {
+func runDockerFile(s actionCode, loginResp *model.LoginResponse) error {
 	dir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	sa, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
@@ -153,11 +183,12 @@ func runDockerFile(s *model.Service) error {
 	}
 	resp, err := cli.ContainerCreate(ctx,
 		&container.Config{
-			Image: s.Tasks[0].Docker.Image,
+			Image: s.service.Tasks[0].Docker.Image,
 			Env: []string{
 				"FILE_PATH=/",
-				fmt.Sprintf("URL=%s", "http://172.17.0.2:4122"),
-				fmt.Sprintf("FILE_NAME=%s", "abcd")},
+				fmt.Sprintf("URL=%s", s.service.Tasks[0].Env["URL"]),
+				fmt.Sprintf("TOKEN=%s", loginResp.FileToken),
+				fmt.Sprintf("meta=%s", string(sa))},
 		},
 		&container.HostConfig{Mounts: []mount.Mount{
 			{

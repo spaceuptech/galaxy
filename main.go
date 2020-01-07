@@ -144,7 +144,19 @@ func main() {
 							Value:  "none",
 						},
 					},
-					Action: actionStart,
+					Action: actionStartCode,
+				},
+				{
+					Name: "build",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:   "env",
+							Usage:  "Builds a codebase",
+							EnvVar: "ENV",
+							Value:  "none",
+						},
+					},
+					Action: actionBuildCode,
 				},
 			},
 		},

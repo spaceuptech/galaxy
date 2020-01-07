@@ -45,12 +45,12 @@ func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 //LoginStart logs the user in galaxy
 func LoginStart(userName, key, url string, local bool) error {
 	if userName == "None" {
-		if err := survey.AskOne(&survey.Input{Message: "Enter Service Name"}, &userName); err != nil {
+		if err := survey.AskOne(&survey.Input{Message: "Enter username"}, &userName); err != nil {
 			return err
 		}
 	}
 	if key == "None" {
-		if err := survey.AskOne(&survey.Input{Message: "Enter Service Name"}, &key); err != nil {
+		if err := survey.AskOne(&survey.Input{Message: "Enter key"}, &key); err != nil {
 			return err
 		}
 	}
