@@ -2,6 +2,9 @@ package main
 
 import (
 	"errors"
+	"os"
+	"strings"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/galaxy/cmd"
 	"github.com/spaceuptech/galaxy/model"
@@ -11,8 +14,6 @@ import (
 	"github.com/spaceuptech/galaxy/server"
 	"github.com/spaceuptech/galaxy/utils/auth"
 	"github.com/urfave/cli"
-	"os"
-	"strings"
 )
 
 func actionRunner(c *cli.Context) error {
@@ -146,7 +147,7 @@ func actionLogin(c *cli.Context) error {
 		url = "ur2"
 	}
 	if tempurl != "default url" {
-		url = c.String("url")
+		url = tempurl
 	}
 	if err := cmd.LoginStart(userName, key, url, local); err != nil {
 		return err
