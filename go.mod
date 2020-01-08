@@ -1,4 +1,4 @@
-module github.com/spaceuptech/launchpad
+module github.com/spaceuptech/galaxy
 
 go 1.13
 

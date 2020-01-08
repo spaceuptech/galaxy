@@ -8,11 +8,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	"github.com/spaceuptech/launchpad/proxy"
-	"github.com/spaceuptech/launchpad/runner"
-	"github.com/spaceuptech/launchpad/runner/driver"
-	"github.com/spaceuptech/launchpad/runner/services"
-	"github.com/spaceuptech/launchpad/utils/auth"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/proxy"
+	"github.com/spaceuptech/galaxy/runner"
+	"github.com/spaceuptech/galaxy/runner/driver"
+  "github.com/spaceuptech/galaxy/runner/services"
+	"github.com/spaceuptech/galaxy/server"
+	"github.com/spaceuptech/galaxy/utils/auth"
 )
 
 func actionRunner(c *cli.Context) error {
@@ -45,7 +47,7 @@ func actionRunner(c *cli.Context) error {
 			ProxySecret:  jwtProxySecret,
 		},
 		Driver: &driver.Config{
-			DriverType:     driver.Type(driverType),
+			DriverType:     model.DriverType(driverType),
 			ConfigFilePath: driverConfig,
 			IsInCluster:    !outsideCluster,
 		},
@@ -80,6 +82,18 @@ func actionProxy(c *cli.Context) error {
 	// Start the proxy
 	p := proxy.New(addr, token)
 	return p.Start()
+}
+
+func actionServer(c *cli.Context) error {
+	// Get server config flags
+	port := c.String("port")
+	loglevel := c.String("log-level")
+
+	// Set the log level
+	setLogLevel(loglevel)
+
+	s := server.New(&server.Config{Port: port})
+	return s.Start()
 }
 
 func setLogLevel(loglevel string) {

@@ -6,8 +6,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/utils"
 )
 
 var upgrader = websocket.Upgrader{}
@@ -32,8 +32,9 @@ func (runner *Runner) handleWebsocketRequest() http.HandlerFunc {
 		nodeIDTemp, ok1 := claims["id"]
 		projectTemp, ok2 := claims["project"]
 		serviceTemp, ok3 := claims["service"]
-		versionTemp, ok4 := claims["version"]
-		if !ok1 || !ok2 || !ok3 || !ok4 {
+		envTemp, ok4 := claims["env"]
+		versionTemp, ok5 := claims["version"]
+		if !ok1 || !ok2 || !ok3 || !ok4 || !ok5 {
 			logrus.Errorln("Failed to establish autoscaler socket connection - token does not contain valid claims")
 			return
 		}
@@ -41,6 +42,7 @@ func (runner *Runner) handleWebsocketRequest() http.HandlerFunc {
 		nodeID := nodeIDTemp.(string)
 		project := projectTemp.(string)
 		service := serviceTemp.(string)
+		env := envTemp.(string)
 		version := versionTemp.(string)
 
 		for {
@@ -54,6 +56,7 @@ func (runner *Runner) handleWebsocketRequest() http.HandlerFunc {
 			msg.NodeID = nodeID
 			msg.Project = project
 			msg.Service = service
+			msg.Environment = env
 			msg.Version = version
 
 			// Append msg to disk
