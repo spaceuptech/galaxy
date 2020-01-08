@@ -3,6 +3,7 @@ package runner
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -26,7 +27,6 @@ func (runner *Runner) handleCreateProject() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
-
 		// Parse request body
 		project := new(model.Project)
 		if err := json.NewDecoder(r.Body).Decode(project); err != nil {
@@ -41,7 +41,6 @@ func (runner *Runner) handleCreateProject() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
-
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
@@ -58,7 +57,6 @@ func (runner *Runner) handleServiceRequest() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
-
 		// Parse request body
 		service := new(model.Service)
 		if err := json.NewDecoder(r.Body).Decode(service); err != nil {
@@ -66,7 +64,6 @@ func (runner *Runner) handleServiceRequest() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
 			return
 		}
-
 		// TODO: Override the project id present in the service object with the one present in the token if user not admin
 
 		// Apply the service config
@@ -75,7 +72,6 @@ func (runner *Runner) handleServiceRequest() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
-
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
@@ -123,7 +119,6 @@ func (runner *Runner) handleProxy() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusServiceUnavailable, err)
 			return
 		}
-
 		var res *http.Response
 		for i := 0; i < 5; i++ {
 			// Fire the request
@@ -133,12 +128,10 @@ func (runner *Runner) handleProxy() http.HandlerFunc {
 				utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 				return
 			}
-
 			// TODO: Make this retry logic better
 			if res.StatusCode != http.StatusNotFound && res.StatusCode != http.StatusServiceUnavailable {
 				break
 			}
-
 			time.Sleep(350 * time.Millisecond)
 
 			// Close the body
@@ -147,13 +140,21 @@ func (runner *Runner) handleProxy() http.HandlerFunc {
 		}
 
 		defer utils.CloseReaderCloser(res.Body)
-
 		// Copy headers and status code
 		w.WriteHeader(res.StatusCode)
 		for k, v := range res.Header {
 			w.Header().Set(k, v[0])
 		}
-
 		_, _ = io.Copy(w, res.Body)
+	}
+}
+
+func (runner *Runner) handleDatabaseService() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Close the body of the request
+		defer utils.CloseReaderCloser(r.Body)
+
+		service := new(model.ManagedService)
+		_ = json.NewDecoder(r.Body).Decode(service)
 	}
 }
