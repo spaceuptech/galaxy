@@ -6,8 +6,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
-
+	"github.com/spaceuptech/galaxy/cmd"
 	"github.com/spaceuptech/galaxy/model"
 	"github.com/spaceuptech/galaxy/proxy"
 	"github.com/spaceuptech/galaxy/runner"
@@ -15,6 +14,7 @@ import (
   "github.com/spaceuptech/galaxy/runner/services"
 	"github.com/spaceuptech/galaxy/server"
 	"github.com/spaceuptech/galaxy/utils/auth"
+	"github.com/urfave/cli"
 )
 
 func actionRunner(c *cli.Context) error {
@@ -109,4 +109,54 @@ func setLogLevel(loglevel string) {
 		logrus.Infoln("Defaulting to `info` level")
 		logrus.SetLevel(logrus.InfoLevel)
 	}
+}
+
+func actionStartCode(c *cli.Context) error {
+	envID := c.String("env")
+	service, loginResp, err := cmd.CodeStart(envID)
+	if err != nil {
+		return err
+	}
+	actionCodeStruct := &model.ActionCode{
+		Service:  service,
+		IsDeploy: false,
+	}
+	if err := cmd.RunDockerFile(actionCodeStruct, loginResp); err != nil {
+		return err
+	}
+	return nil
+}
+
+func actionBuildCode(c *cli.Context) error {
+	envID := c.String("env")
+	service, loginResp, err := cmd.CodeStart(envID)
+	if err != nil {
+		return err
+	}
+	actionCodeStruct := &model.ActionCode{
+		Service:  service,
+		IsDeploy: true,
+	}
+	if err := cmd.RunDockerFile(actionCodeStruct, loginResp); err != nil {
+		return err
+	}
+	return nil
+}
+
+func actionLogin(c *cli.Context) error {
+	userName := c.String("username")
+	key := c.String("key")
+	local := c.Bool("local")
+	tempurl := c.String("url")
+	url := "url1"
+	if local {
+		url = "ur2"
+	}
+	if tempurl != "default url" {
+		url = tempurl
+	}
+	if err := cmd.LoginStart(userName, key, url, local); err != nil {
+		return err
+	}
+	return nil
 }

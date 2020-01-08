@@ -5,8 +5,8 @@ type Service struct {
 	ID          string            `json:"id" yaml:"id"`
 	Name        string            `json:"name" yaml:"name"`
 	ProjectID   string            `json:"projectId" yaml:"projectId"`
-	Version     string            `json:"version" yaml:"version"`
 	Environment string            `json:"env" yaml:"env"`
+	Version     string            `json:"version" yaml:"version"`
 	Scale       ScaleConfig       `json:"scale" yaml:"scale"`
 	Labels      map[string]string `json:"labels" yaml:"labels"`
 	Tasks       []Task            `json:"tasks" yaml:"tasks"`
@@ -125,4 +125,9 @@ type ExposeRuleURI struct {
 	Prefix  *string `json:"prefix" yaml:"prefix"`
 	Exact   *string `json:"exact" yaml:"exact"`
 	Rewrite *string `json:"rewrite" yaml:"rewrite"`
+}
+
+type ActionCode struct {
+	Service  *Service `json:"service" yaml:"service"`
+	IsDeploy bool     `json:"isdeploy" yaml:"isdeploy"`
 }

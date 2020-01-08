@@ -148,6 +148,66 @@ func main() {
 			},
 			Action: actionServer,
 		},
+		{
+			Name:  "code",
+			Usage: "Commands to work with non dockerized code",
+			Subcommands: []cli.Command{
+				{
+					Name: "start",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:   "env",
+							Usage:  "Builds and deploys a codebase",
+							EnvVar: "ENV",
+							Value:  "none",
+						},
+					},
+					Action: actionStartCode,
+				},
+				{
+					Name: "build",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:   "env",
+							Usage:  "Builds a codebase",
+							EnvVar: "ENV",
+							Value:  "none",
+						},
+					},
+					Action: actionBuildCode,
+				},
+			},
+		},
+		{
+			Name:  "login",
+			Usage: "Commands to log in",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "username",
+					Usage:  "Accepts the username for login",
+					EnvVar: "USERNAME",
+					Value:  "None",
+				},
+				cli.StringFlag{
+					Name:   "key",
+					Usage:  "Accepts the access key to be verified during login",
+					EnvVar: "KEY",
+					Value:  "None",
+				},
+				cli.StringFlag{
+					Name:   "url",
+					Usage:  "Accepts the URL of server",
+					EnvVar: "URL",
+					Value:  "noorain.bolega.com",
+				},
+				cli.BoolFlag{
+					Name:   "local",
+					Usage:  "Determines whether local URL is to be used as server URL",
+					EnvVar: "LOCAL",
+				},
+			},
+			Action: actionLogin,
+		},
 	}
 
 	// Start the app
