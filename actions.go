@@ -12,6 +12,7 @@ import (
 	"github.com/spaceuptech/galaxy/proxy"
 	"github.com/spaceuptech/galaxy/runner"
 	"github.com/spaceuptech/galaxy/runner/driver"
+  "github.com/spaceuptech/galaxy/runner/services"
 	"github.com/spaceuptech/galaxy/server"
 	"github.com/spaceuptech/galaxy/utils/auth"
 )
@@ -49,6 +50,11 @@ func actionRunner(c *cli.Context) error {
 			DriverType:     model.DriverType(driverType),
 			ConfigFilePath: driverConfig,
 			IsInCluster:    !outsideCluster,
+		},
+		Providers: &services.Config{
+			DOToken:   c.String("do-token"),
+			Region:    c.String("region"),
+			Providers: c.StringSlice("providers"),
 		},
 	})
 	if err != nil {

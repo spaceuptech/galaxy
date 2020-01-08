@@ -22,7 +22,6 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "galaxy"
 	app.Version = "0.1.0"
-
 	app.Commands = []cli.Command{
 		{
 			Name:  "runner",
@@ -84,6 +83,25 @@ func main() {
 					EnvVar: "OUTSIDE_CLUSTER",
 					Usage:  "Indicates whether galaxy in running inside the cluster",
 				},
+
+				// Managed service module specific flags
+				cli.StringSliceFlag{
+					Name:   "providers",
+					EnvVar: "PROVIDER",
+					Usage:  "key:value pair of the cloud-vendor and technology",
+				},
+				// Digital Ocean
+				cli.StringFlag{
+					Name:   "do-token",
+					EnvVar: "DO_TOKEN",
+					Usage:  "The token to be used for authentication",
+				},
+				cli.StringFlag{
+					Name:   "region",
+					EnvVar: "REGION",
+					Usage:  "Droplet region",
+				},
+				// TODO: add support for other cloud-vendors
 			},
 			Action: actionRunner,
 		},

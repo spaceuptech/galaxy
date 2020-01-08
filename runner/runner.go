@@ -13,6 +13,7 @@ import (
 
 	"github.com/spaceuptech/galaxy/model"
 	"github.com/spaceuptech/galaxy/runner/driver"
+	"github.com/spaceuptech/galaxy/runner/services"
 	"github.com/spaceuptech/galaxy/utils"
 	"github.com/spaceuptech/galaxy/utils/auth"
 )
@@ -33,6 +34,24 @@ type Runner struct {
 	// For autoscaler
 	db       *badger.DB
 	chAppend chan *model.ProxyMessage
+
+	// For managedServices
+	services *model.ManagedService
+}
+
+// Config is the object required to configure the runner
+type Config struct {
+	Port      string
+	ProxyPort string
+
+	// Configuration for the driver
+	Driver *driver.Config
+
+	// Configuration for the auth module
+	Auth *auth.Config
+
+	// Configuration for DO provider
+	Providers *services.Config
 }
 
 // New creates a new instance of the runner
