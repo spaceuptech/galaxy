@@ -161,6 +161,18 @@ func main() {
 			},
 		},
 		{
+			Name:  "Setup",
+			Usage: "Commands to work with Kubernetes and Docker",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "driver",
+					EnvVar: "DRIVER",
+					Value:  "docker",
+				},
+			},
+			Action: actionSetup,
+		},
+		{
 			Name:  "login",
 			Usage: "Commands to log in",
 			Flags: []cli.Flag{

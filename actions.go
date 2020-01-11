@@ -205,3 +205,14 @@ func runDockerFile(s actionCode, loginResp *model.LoginResponse) error {
 	}
 	return nil
 }
+
+func actionSetup(c *cli.Context) error {
+	driver := c.String("driver")
+	switch driver {
+	case "kubernetes":
+		cmd.SetKubernetes()
+	case "docker":
+		return cmd.SetDocker()
+	}
+	return nil
+}

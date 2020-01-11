@@ -15,6 +15,7 @@ require (
 	github.com/gogo/protobuf v1.3.0
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.1
+	github.com/kubernetes-client/go v0.0.0-20190928040339-c757968c4c36
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/rs/cors v1.7.0
@@ -24,7 +25,7 @@ require (
 	gopkg.in/yaml.v2 v2.2.4
 	istio.io/api v0.0.0-20191109011911-e51134872853
 	istio.io/client-go v0.0.0-20191206191348-5c576a7ecef0
-	k8s.io/api v0.0.0-20191114100352-16d7abae0d2a
-	k8s.io/apimachinery v0.0.0-20191028221656-72ed19daf4bb
-	k8s.io/client-go v0.0.0-20191114101535-6c5935290e33
+	k8s.io/api v0.0.0-20191230033939-7dc09db16fb8
+	k8s.io/apimachinery v0.0.0-20200106233518-8f98b2385567
+	k8s.io/client-go v0.0.0-20200107234521-8ead54f5cff8
 )
