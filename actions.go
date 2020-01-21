@@ -6,15 +6,16 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli"
+
 	"github.com/spaceuptech/galaxy/cmd"
 	"github.com/spaceuptech/galaxy/model"
 	"github.com/spaceuptech/galaxy/proxy"
 	"github.com/spaceuptech/galaxy/runner"
 	"github.com/spaceuptech/galaxy/runner/driver"
-  "github.com/spaceuptech/galaxy/runner/services"
+	"github.com/spaceuptech/galaxy/runner/services"
 	"github.com/spaceuptech/galaxy/server"
 	"github.com/spaceuptech/galaxy/utils/auth"
-	"github.com/urfave/cli"
 )
 
 func actionRunner(c *cli.Context) error {
@@ -146,16 +147,20 @@ func actionBuildCode(c *cli.Context) error {
 func actionLogin(c *cli.Context) error {
 	userName := c.String("username")
 	key := c.String("key")
+	serverUrl := c.String("url")
 	local := c.Bool("local")
-	tempurl := c.String("url")
-	url := "url1"
+	url := "url1" // todo set default url
 	if local {
-		url = "ur2"
+		url = "localhost:4122"
 	}
-	if tempurl != "default url" {
-		url = tempurl
+	if serverUrl != "default url" { // todo get default url
+		url = serverUrl
 	}
-	if err := cmd.LoginStart(userName, key, url, local); err != nil {
+	return cmd.LoginStart(userName, key, url, local)
+}
+
+func actionSetup(c *cli.Context) error {
+	if err := cmd.CodeSetup(); err != nil {
 		return err
 	}
 	return nil

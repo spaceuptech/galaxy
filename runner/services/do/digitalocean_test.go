@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/digitalocean/godo"
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/utils"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/utils"
 )
 
 type httpMock struct {

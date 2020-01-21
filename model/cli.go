@@ -1,10 +1,9 @@
 package model
 
 type LoginResponse struct {
-	AccountID string     `json:"id" yaml:"id"`
-	Token     string     `json:"token" yaml:"token"`
-	FileToken string     `json:"fileToken" yaml:"fileToken"`
-	Projects  []Projects `json:"projects" yaml:"projects"`
+	Token    string      `json:"token" yaml:"token"`
+	Projects []*Projects `json:"projects" yaml:"projects"`
+	Error    string      `json:"error"`
 }
 
 type Credential struct {
@@ -22,7 +21,7 @@ type Account struct {
 type Projects struct {
 	Name         string        `json:"name" yaml:"name"`
 	ID           string        `json:"id" yaml:"id"`
-	Environments []Environment `json:"environment" yaml:"environment"`
+	Environments []*Environment `json:"environment,omitempty" yaml:"environment"`
 }
 
 type Environment struct {

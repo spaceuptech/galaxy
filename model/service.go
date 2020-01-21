@@ -128,6 +128,7 @@ type ExposeRuleURI struct {
 }
 
 type ActionCode struct {
-	Service  *Service `json:"service" yaml:"service"`
-	IsDeploy bool     `json:"isdeploy" yaml:"isdeploy"`
+	Service   *Service `json:"service" yaml:"service"`
+	IsDeploy  bool     `json:"isdeploy" yaml:"isdeploy"`
+	Condition string   `json:"condition" yaml:"condition"`
 }

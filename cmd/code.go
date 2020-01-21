@@ -12,13 +12,16 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
+	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/galaxy/model"
 )
 
-//CodeStart starts the code commands
+// CodeStart starts the code commands
 func CodeStart(envID string) (*model.Service, *model.LoginResponse, error) {
 	credential, err := getCreds()
 	if err != nil {
+		logrus.Errorf("error code start unable to get credentials got error message - %v", err)
 		return nil, nil, err
 	}
 
@@ -26,6 +29,7 @@ func CodeStart(envID string) (*model.Service, *model.LoginResponse, error) {
 
 	loginRes, err := login(selectedAccount)
 	if err != nil {
+		logrus.Errorf("error code start unable to login got error message - %v", err)
 		return nil, nil, err
 	}
 
@@ -33,13 +37,14 @@ func CodeStart(envID string) (*model.Service, *model.LoginResponse, error) {
 	if err != nil {
 		c, err = generateServiceConfig(loginRes.Projects, selectedAccount, envID)
 		if err != nil {
+			logrus.Errorf("error code start unable to generate service config got error message - %v", err)
 			return nil, nil, err
 		}
 	}
 	return c, loginRes, nil
 }
 
-func generateServiceConfig(projects []model.Projects, selectedaccount *model.Account, envID string) (*model.Service, error) {
+func generateServiceConfig(projects []*model.Projects, selectedaccount *model.Account, envID string) (*model.Service, error) {
 	progLang, err := getProgLang()
 	if err != nil {
 		return nil, err
@@ -121,8 +126,9 @@ func generateServiceConfig(projects []model.Projects, selectedaccount *model.Acc
 	return c, nil
 }
 
-//RunDockerFile starts a container using go docker client
+// RunDockerFile starts a container using go docker client
 func RunDockerFile(s *model.ActionCode, loginResp *model.LoginResponse) error {
+	s.Condition = "create"
 	dir, err := os.Getwd()
 	if err != nil {
 		return err
@@ -136,13 +142,15 @@ func RunDockerFile(s *model.ActionCode, loginResp *model.LoginResponse) error {
 	if err != nil {
 		return err
 	}
+	// todo potential bug we are running runtime image here
+	// todo potential bug in builder image worddir is /builder but in sh script we use cd /build
 	resp, err := cli.ContainerCreate(ctx,
 		&container.Config{
 			Image: s.Service.Tasks[0].Docker.Image,
 			Env: []string{
 				"FILE_PATH=/",
 				fmt.Sprintf("URL=%s", s.Service.Tasks[0].Env["URL"]),
-				fmt.Sprintf("TOKEN=%s", loginResp.FileToken),
+				fmt.Sprintf("TOKEN=%s", loginResp.Token),
 				fmt.Sprintf("meta=%s", string(sa))},
 		},
 		&container.HostConfig{Mounts: []mount.Mount{

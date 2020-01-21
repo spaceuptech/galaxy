@@ -75,7 +75,7 @@ func getImage(progLang string) (string, error) {
 	case "nodejs":
 		return "spaceuptech/runtime-node", nil
 	case "go":
-		return "spaceuptech/runtime-alpine", nil
+		return "spaceuptech/runtime-golang", nil
 	default:
 		return "", fmt.Errorf("%s is not supported", progLang)
 	}
@@ -94,25 +94,25 @@ func getCmd(progLang string) []string {
 	}
 }
 
-func getProject(projectID string, projects []model.Projects) (*model.Projects, error) {
+func getProject(projectID string, projects []*model.Projects) (*model.Projects, error) {
 	for _, project := range projects {
 		if projectID == project.ID {
-			return &project, nil
+			return project, nil
 		}
 	}
 	return nil, fmt.Errorf("Invalid Project Name")
 }
 
-func getEnvironment(envID string, environments []model.Environment) (*model.Environment, error) {
+func getEnvironment(envID string, environments []*model.Environment) (*model.Environment, error) {
 	for _, env := range environments {
 		if envID == env.ID {
-			return &env, nil
+			return env, nil
 		}
 	}
 	return nil, errors.New("Invalid Project Name")
 }
 
-func getProjects(projects []model.Projects) []string {
+func getProjects(projects []*model.Projects) []string {
 	var projnames []string
 	for _, val := range projects {
 		projnames = append(projnames, fmt.Sprintf("%s (%s)", val.ID, val.Name))
