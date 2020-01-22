@@ -160,8 +160,5 @@ func actionLogin(c *cli.Context) error {
 }
 
 func actionSetup(c *cli.Context) error {
-	if err := cmd.CodeSetup(); err != nil {
-		return err
-	}
-	return nil
+	return cmd.CodeSetup()
 }
