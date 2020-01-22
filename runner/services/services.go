@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/spaceuptech/launchpad/model"
-	"github.com/spaceuptech/launchpad/runner/services/do"
+	"github.com/spaceuptech/galaxy/model"
+	"github.com/spaceuptech/galaxy/runner/services/do"
 )
 
 // ManagedServices contains the map of Provider interface

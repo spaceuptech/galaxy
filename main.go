@@ -185,7 +185,7 @@ func main() {
 				cli.StringFlag{
 					Name:   "username",
 					Usage:  "Accepts the username for login",
-					EnvVar: "USERNAME",
+					EnvVar: "USER_NAME", // don't set environment variable as USERNAME -> defaults to username of host machine in linux
 					Value:  "None",
 				},
 				cli.StringFlag{
@@ -198,7 +198,7 @@ func main() {
 					Name:   "url",
 					Usage:  "Accepts the URL of server",
 					EnvVar: "URL",
-					Value:  "noorain.bolega.com",
+					Value:  "localhost:4122",
 				},
 				cli.BoolFlag{
 					Name:   "local",
@@ -207,6 +207,12 @@ func main() {
 				},
 			},
 			Action: actionLogin,
+		},
+		{
+			Name:   "setup",
+			Usage:  "setup development environment",
+			Flags:  []cli.Flag{},
+			Action: actionSetup,
 		},
 	}
 
